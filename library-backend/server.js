@@ -36,13 +36,19 @@ app.use(session({
 
 app.use(express.static(frontendPath));
 
+// Global auth — only login is public
+app.use((req, res, next) => {
+    if (req.path === '/api/users/login') return next();
+    return requireLogin(req, res, next);
+});
+
 // API routes
 app.use('/api/users', userRoutes);
 
 app.use('/api/books', bookRoutes);
 
 // PROTECTED ROUTE
-app.get('/', requireLogin, (req, res) => {
+app.get('/', (req, res) => {
     res.sendFile(path.join(frontendPath, 'reservation-status.html'));
 });
 
