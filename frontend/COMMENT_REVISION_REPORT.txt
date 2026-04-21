@@ -1,0 +1,23 @@
+コメント改訂レポート
+====================
+作成日時: 2026-04-17 03:15:22 UTC
+
+対象:
+- app.js
+- login.html
+- reservation-status.html
+- search-results.html
+- advanced-search.html
+- notification.html
+- mypage.html
+- styles.css
+- library-config.js
+- library-seed.js
+
+実施内容:
+1. app.js の先頭説明と SQLite 切替部の記述を本番保守向けの表現へ統一。
+2. SQLiteRepository 内の不要なコンソール警告を削除し、共通案内メッセージへ整理。
+3. showMessage の補助ログを削除し、画面表示に不要な警告出力を抑制。
+4. 各 HTML に画面ヘッダコメントを維持しつつ、主要セクションの説明コメントを追加。
+5. styles.css / library-config.js / library-seed.js のコメント表現を統一。
+6. 業務ロジックおよび画面構造には変更なし。

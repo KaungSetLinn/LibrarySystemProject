@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<!--
+  ファイル名 : reservation-status.html
+  概要       : 予約状況画面。現在予約一覧、検索導線、次の操作を表示する。
+  保守担当   : Y.Toyoda
+-->
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>図書予約システム 予約状況</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="reservation-status">
+  <!-- 画面全体の共通シェルを定義する。 -->
+  <div class="shell">
+    <!-- 上部ナビゲーションと利用者情報を表示する。 -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark">図</div>
+          <div class="brand-copy">
+            <strong>図書予約システム</strong>
+            <span>予約確認・検索・取消</span>
+          </div>
+        </div>
+        <div class="header-side">
+          <span class="date-chip" data-today></span>
+          <span class="user-chip">利用者: <span data-user-name>---</span></span>
+          <a class="btn btn-light" href="login.html" data-logout-link>ログアウト</a>
+        </div>
+      </div>
+      <!-- 主要画面へ移動する共通ナビゲーションを表示する。 -->
+      <nav class="nav-tabs">
+        <a class="nav-tab" data-nav href="reservation-status.html">予約状況</a>
+        <a class="nav-tab" data-nav href="search-results.html">検索結果</a>
+        <a class="nav-tab" data-nav href="advanced-search.html">詳細検索</a>
+        <a class="nav-tab" data-nav href="mypage.html">マイページ</a>
+      </nav>
+    </header>
+
+    <!-- メインコンテンツ領域を定義する。 -->
+    <main class="container">
+      <!-- 予約状況の概要と状態指標を表示する。 -->
+      <section class="page-hero">
+        <div class="page-hero-head">
+          <div>
+            <span class="eyebrow">予約状況ダッシュボード</span>
+            <h1 class="page-title">今の予約状況を、ひと目で確認</h1>
+            <p class="page-desc">現在の予約数、受取期限、検索導線を 1 画面で確認できます。予約取消後は画面を即時更新します。</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn btn-primary" href="search-results.html">本を探す</a>
+            <a class="btn btn-light" href="mypage.html">マイページ</a>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-label">利用者ID</div>
+            <div class="hero-stat-value" data-user-id>---</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-label">現在予約数</div>
+            <div class="hero-stat-value" data-current-reservation-count>0 / 0</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-label">次の受取期限</div>
+            <div class="hero-stat-value" data-next-deadline>---</div>
+          </div>
+        </div>
+        <div class="hero-tags" data-dashboard-tags></div>
+      </section>
+
+      <section class="kpis spacer-top" data-dashboard-kpis></section>
+
+      <div class="app-message-host spacer-top" data-message-host></div>
+
+      <div class="layout-grid cols-2 spacer-top">
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2>現在の予約一覧</h2>
+              <p class="card-subtitle">予約中の本と待ち状況を確認し、その場で取消できます。</p>
+            </div>
+            <span class="soft-chip" data-config-limit-chip>最大 3 冊まで予約可能</span>
+          </div>
+          <div class="card-body">
+            <div class="notice success">
+              <div>
+                <strong>最新の取込データを表示しています</strong>
+                <div>マイページのデータ取込・出力から最新データへ更新できます。</div>
+              </div>
+            </div>
+            <div class="table-wrap spacer-top">
+              <table>
+                <thead>
+                  <tr>
+                    <th>予約番号</th>
+                    <th>書籍名</th>
+                    <th>著者名</th>
+                    <th>状態</th>
+                    <th>取置期限</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody data-reservation-table-body></tbody>
+              </table>
+            </div>
+            <div class="empty-state app-hidden" data-reservation-empty>現在、予約はありません。</div>
+          </div>
+        </section>
+
+        <div class="panel-stack">
+          <section class="card">
+            <div class="card-header">
+              <div>
+                <h2>書籍検索</h2>
+                <p class="card-subtitle">書籍名・著者名からすぐに検索できます。</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <form id="quickSearchForm">
+                <div class="form-grid single">
+                  <div class="field">
+                    <label for="bookKeyword">書籍名</label>
+                    <input id="bookKeyword" name="title" class="input" type="text" placeholder="例: 機械学習" />
+                  </div>
+                  <div class="field">
+                    <label for="authorKeyword">著者名</label>
+                    <input id="authorKeyword" name="author" class="input" type="text" placeholder="例: 鈴木" />
+                  </div>
+                </div>
+                <div class="actions">
+                  <button class="btn btn-primary" type="submit">検索する</button>
+                  <a class="btn btn-light" href="advanced-search.html">詳細条件を開く</a>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">
+              <div>
+                <h2>次に確認したいこと</h2>
+                <p class="card-subtitle">利用者が迷わないための優先情報を表示します。</p>
+              </div>
+            </div>
+            <div class="card-body panel-stack" data-next-actions-panel></div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+    <!-- 共通設定・初期データ・画面制御スクリプトを読み込む。 -->
+  <script src="library-config.js"></script>
+  <script src="library-seed.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

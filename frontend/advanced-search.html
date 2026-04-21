@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<!--
+  ファイル名 : advanced-search.html
+  概要       : 詳細検索画面。蔵書検索条件を指定して検索結果画面へ遷移する。
+  保守担当   : Y.Toyoda
+-->
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>図書予約システム 詳細検索</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="advanced-search">
+  <!-- 画面全体の共通シェルを定義する。 -->
+  <div class="shell">
+    <!-- 上部ナビゲーションと利用者情報を表示する。 -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark">図</div>
+          <div class="brand-copy">
+            <strong>図書予約システム</strong>
+            <span>詳細条件で検索</span>
+          </div>
+        </div>
+        <div class="header-side">
+          <span class="date-chip" data-today></span>
+          <span class="user-chip">利用者: <span data-user-name>---</span></span>
+          <a class="btn btn-light" href="login.html" data-logout-link>ログアウト</a>
+        </div>
+      </div>
+      <!-- 主要画面へ移動する共通ナビゲーションを表示する。 -->
+      <nav class="nav-tabs">
+        <a class="nav-tab" data-nav href="reservation-status.html">予約状況</a>
+        <a class="nav-tab" data-nav href="search-results.html">検索結果</a>
+        <a class="nav-tab" data-nav href="advanced-search.html">詳細検索</a>
+        <a class="nav-tab" data-nav href="mypage.html">マイページ</a>
+      </nav>
+    </header>
+
+    <!-- メインコンテンツ領域を定義する。 -->
+    <main class="container">
+      <!-- 詳細検索の案内と利用方針を表示する。 -->
+      <section class="page-hero">
+        <div class="page-hero-head">
+          <div>
+            <span class="eyebrow">詳細検索</span>
+            <h1 class="page-title">条件を細かく指定して、目的の本にたどり着く</h1>
+            <p class="page-desc">分類、並び順、貸出可能、予約可能などを指定して検索できます。検索条件は画面間で引き継がれます。</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn btn-light" href="reservation-status.html">戻る</a>
+            <a class="btn btn-secondary" href="search-results.html">検索結果へ</a>
+          </div>
+        </div>
+        <div class="hero-tags">
+          <span class="badge accent">条件保存に対応</span>
+          <span class="badge neutral">貸出可能のみ抽出</span>
+          <span class="badge reserved">分類検索に対応</span>
+        </div>
+      </section>
+
+      <div class="app-message-host spacer-top" data-message-host></div>
+
+      <div class="split spacer-top">
+        <aside class="panel-stack">
+          <section class="nav-card">
+            <div class="nav-list">
+              <a class="active" href="#">基本条件</a>
+              <a href="#">利用可否</a>
+              <a href="#">分類</a>
+              <a href="#">並び替え</a>
+              <a href="#">保存条件</a>
+            </div>
+          </section>
+          <section class="side-info">
+            <strong>検索のコツ</strong>
+            <p class="muted">書籍名が曖昧な場合は、著者名や分類を組み合わせると見つけやすくなります。</p>
+          </section>
+          <section class="side-info">
+            <strong>設計上の意図</strong>
+            <p class="muted">よく使う条件から順に入力しやすい構成にしています。</p>
+          </section>
+        </aside>
+
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2>検索条件</h2>
+              <p class="card-subtitle">書籍名、著者名、分類、利用可否、並び替え条件を入力できます。</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <form id="advancedSearchForm" class="advanced-search-form panel-stack">
+              <div class="section-split">
+                <div class="field">
+                  <label for="titleKeyword">書籍名</label>
+                  <input id="titleKeyword" name="title" class="input" type="text" placeholder="例: AI" />
+                </div>
+                <div class="field">
+                  <label for="authorName">著者名</label>
+                  <input id="authorName" name="author" class="input" type="text" placeholder="例: 田中" />
+                </div>
+              </div>
+
+              <div class="section-split">
+                <div class="field">
+                  <label for="category">分類</label>
+                  <select id="category" name="category" class="select">
+                    <option value="">すべての分類</option>
+              <option value="文芸">文芸</option>
+              <option value="情報科学">情報科学</option>
+              <option value="法律">法律</option>
+              <option value="生活">生活</option>
+              <option value="福祉">福祉</option>
+              <option value="学術">学術</option>
+            </select>
+                </div>
+                <div class="field">
+                  <label for="sort">並び替え</label>
+                  <select id="sort" name="sort" class="select">
+                    <option value="bookId">書籍ID順</option>
+                    <option value="title">書籍名順</option>
+                    <option value="author">著者名順</option>
+                    <option value="arrivalDateDesc">新着順</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="check-grid">
+                <label class="check-card">
+                  <div class="switch-row">
+                    <strong>貸出可能のみ</strong>
+                    <input id="availableOnly" name="availableOnly" type="checkbox" class="app-hidden" />
+                    <span class="switch" aria-hidden="true" data-switch-indicator></span>
+                  </div>
+                  <span class="muted">貸出中ではない資料だけに絞り込みます。</span>
+                </label>
+                <label class="check-card">
+                  <div class="switch-row">
+                    <strong>予約可能のみ</strong>
+                    <input id="reservableOnly" name="reservableOnly" type="checkbox" class="app-hidden" />
+                    <span class="switch" aria-hidden="true" data-switch-indicator></span>
+                  </div>
+                  <span class="muted">予約登録できる資料のみを表示します。</span>
+                </label>
+                <label class="check-card">
+                  <div class="switch-row">
+                    <strong>条件を保存</strong>
+                    <input id="saveCriteria" name="saveCriteria" type="checkbox" class="app-hidden" checked />
+                    <span class="switch on" aria-hidden="true" data-switch-indicator></span>
+                  </div>
+                  <span class="muted">次回以降の検索開始条件として保存します。</span>
+                </label>
+              </div>
+
+              <div class="notice neutral">
+                <div>
+                  <strong>検索条件は画面間で保持されます</strong>
+                  <div>条件を送信すると検索結果画面へ遷移し、同じ条件で再検索できます。</div>
+                </div>
+              </div>
+
+              <div class="actions">
+                <button class="btn btn-primary" type="submit">この条件で検索</button>
+                <button class="btn btn-light" type="button" data-reset-search>条件をリセット</button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+    <!-- 共通設定・初期データ・画面制御スクリプトを読み込む。 -->
+  <script src="library-config.js"></script>
+  <script src="library-seed.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
