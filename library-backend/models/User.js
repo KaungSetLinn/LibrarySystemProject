@@ -2,18 +2,19 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../db/connection');
 
 const User = sequelize.define('User', {
-    user_id: {
+    userId: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    user_name: {
+    userName: {
         type: DataTypes.STRING,
         allowNull: false
     }
 }, {
     tableName: 'users',
-    timestamps: false
+    timestamps: false,
+    underscored: false
 });
 
 module.exports = User;

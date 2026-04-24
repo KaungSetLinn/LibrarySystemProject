@@ -2,28 +2,29 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../db/connection');
 
 const Reservation = sequelize.define('Reservation', {
-    reservation_id: {
+    reservationId: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
     },
-    user_id: {
+    userId: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    book_id: {
+    bookId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         unique: true
     },
-    reserved_at: {
+    reservedAt: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW
     }
 }, {
     tableName: 'reservations',
-    timestamps: false
+    timestamps: false,
+    underscored: false
 });
 
 module.exports = Reservation;

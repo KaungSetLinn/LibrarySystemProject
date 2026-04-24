@@ -2,13 +2,13 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../db/connection');
 
 const Book = sequelize.define('Book', {
-    book_id: {
+    bookId: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         allowNull: false,
         autoIncrement: true
     },
-    book_name: {
+    bookName: {
         type: DataTypes.STRING(100),
         allowNull: false
     },
@@ -20,23 +20,24 @@ const Book = sequelize.define('Book', {
         type: DataTypes.STRING(50),
         allowNull: true
     },
-    can_reserve: {
+    canReserve: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true
     },
-    is_disabled: {
+    isDisabled: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false
     },
-    arrival_date: {
+    arrivalDate: {
         type: DataTypes.DATEONLY,
         allowNull: true
     },
 }, {
     tableName: 'books',
-    timestamps: false
+    timestamps: false,
+    underscored: false
 });
 
 module.exports = Book;

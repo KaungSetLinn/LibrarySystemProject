@@ -1,38 +1,38 @@
 CREATE TABLE books (
-    book_id INTEGER NOT NULL PRIMARY KEY,
-    book_name TEXT NOT NULL,
+    bookId INTEGER NOT NULL PRIMARY KEY,
+    bookName TEXT NOT NULL,
     author TEXT NOT NULL,
     category TEXT,
-    can_reserve BOOLEAN DEFAULT 1,
-    is_disabled BOOLEAN DEFAULT 0,
-    arrival_date TEXT
+    canReserve BOOLEAN DEFAULT 1,
+    isDisabled BOOLEAN DEFAULT 0,
+    arrivalDate TEXT
 );
 
 CREATE TABLE users (
-    user_id INTEGER NOT NULL PRIMARY KEY,
-    user_name TEXT NOT NULL
+    userId INTEGER NOT NULL PRIMARY KEY,
+    userName TEXT NOT NULL
 );
 
 CREATE TABLE lendings (
-    lending_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    book_id INTEGER NOT NULL,
-    lending_date TEXT DEFAULT (DATE('now')),
-    due_date TEXT NOT NULL,
-    return_date TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (book_id) REFERENCES books(book_id),
-    CHECK (due_date >= lending_date)
+    lendingId INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    bookId INTEGER NOT NULL,
+    lendingDate TEXT DEFAULT (DATE('now')),
+    dueDate TEXT NOT NULL,
+    returnDate TEXT,
+    FOREIGN KEY (userId) REFERENCES users(userId),
+    FOREIGN KEY (bookId) REFERENCES books(bookId),
+    CHECK (dueDate >= lendingDate)
 );
 
 create table reservations (
-	reservation_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    book_id INTEGER NOT NULL UNIQUE,
-    reserved_at DATETIME NOT NULL DEFAULT (datetime('now')),
+	reservationId INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    bookId INTEGER NOT NULL UNIQUE,
+    reservedAt DATETIME NOT NULL DEFAULT (datetime('now')),
 
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (book_id)   REFERENCES books(book_id)
+    FOREIGN KEY (userId) REFERENCES users(userId),
+    FOREIGN KEY (bookId)   REFERENCES books(bookId)
 );
 
 insert into users values( '1', '佐藤翔太' );
@@ -2497,17 +2497,17 @@ insert into books values( '2438', '竜馬がゆく 4', '司馬遼太郎', '文�
 insert into books values( '2439', '竜馬がゆく 3', '司馬遼太郎', '文芸', true, false, '2025-12-06' );
 insert into books values( '2440', 'キリスト伝説集', 'ラーゲルレーヴ', '文芸', true, false, '2025-12-07' );
 
-insert into lendings (user_id, book_id, lending_date, due_date, return_date) values (1, 100, '2026-04-01', '2026-04-15', NULL);
-insert into lendings (user_id, book_id, lending_date, due_date, return_date) values (2, 102, '2026-04-05', '2026-04-19', NULL);
-insert into lendings (user_id, book_id, lending_date, due_date, return_date) values (3, 104, '2026-04-10', '2026-04-24', NULL);
+insert into lendings (userId, bookId, lendingDate, dueDate, returnDate) values (1, 100, '2026-04-01', '2026-04-15', NULL);
+insert into lendings (userId, bookId, lendingDate, dueDate, returnDate) values (2, 102, '2026-04-05', '2026-04-19', NULL);
+insert into lendings (userId, bookId, lendingDate, dueDate, returnDate) values (3, 104, '2026-04-10', '2026-04-24', NULL);
 
-insert into reservations (user_id, book_id, reserved_at) values (4,  15, '2026-04-01 09:00:00');
-insert into reservations (user_id, book_id, reserved_at) values (6,  25, '2026-04-02 10:30:00');
-insert into reservations (user_id, book_id, reserved_at) values (8,  35, '2026-04-05 11:45:00');
-insert into reservations (user_id, book_id, reserved_at) values (10, 45, '2026-04-07 14:00:00');
-insert into reservations (user_id, book_id, reserved_at) values (12, 55, '2026-04-09 15:15:00');
-insert into reservations (user_id, book_id, reserved_at) values (14, 65, '2026-04-11 08:30:00');
-insert into reservations (user_id, book_id, reserved_at) values (16, 75, '2026-04-14 09:00:00');
-insert into reservations (user_id, book_id, reserved_at) values (17, 80, '2026-04-16 10:00:00');
-insert into reservations (user_id, book_id, reserved_at) values (18, 85, '2026-04-18 13:30:00');
-insert into reservations (user_id, book_id, reserved_at) values (19, 90, '2026-04-20 16:00:00');
+insert into reservations (userId, bookId, reservedAt) values (4,  15, '2026-04-01 09:00:00');
+insert into reservations (userId, bookId, reservedAt) values (6,  25, '2026-04-02 10:30:00');
+insert into reservations (userId, bookId, reservedAt) values (8,  35, '2026-04-05 11:45:00');
+insert into reservations (userId, bookId, reservedAt) values (10, 45, '2026-04-07 14:00:00');
+insert into reservations (userId, bookId, reservedAt) values (12, 55, '2026-04-09 15:15:00');
+insert into reservations (userId, bookId, reservedAt) values (14, 65, '2026-04-11 08:30:00');
+insert into reservations (userId, bookId, reservedAt) values (16, 75, '2026-04-14 09:00:00');
+insert into reservations (userId, bookId, reservedAt) values (17, 80, '2026-04-16 10:00:00');
+insert into reservations (userId, bookId, reservedAt) values (18, 85, '2026-04-18 13:30:00');
+insert into reservations (userId, bookId, reservedAt) values (19, 90, '2026-04-20 16:00:00');

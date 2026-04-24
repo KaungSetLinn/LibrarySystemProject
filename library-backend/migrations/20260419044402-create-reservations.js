@@ -3,32 +3,32 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('reservations', {
-      reservation_id: {
+      reservationId: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false,
       },
-      user_id: {
+      userId: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: 'users',
-          key: 'user_id',
+          key: 'userId',
         },
         onDelete: 'CASCADE',
       },
-      book_id: {
+      bookId: {
         type: Sequelize.INTEGER,
         allowNull: false,
         unique: true,
         references: {
           model: 'books',
-          key: 'book_id',
+          key: 'bookId',
         },
         onDelete: 'CASCADE',
       },
-      reserved_at: {
+      reservedAt: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.NOW,
@@ -37,6 +37,6 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable('RESERVATIONS');
+    await queryInterface.dropTable('reservations');
   },
 };

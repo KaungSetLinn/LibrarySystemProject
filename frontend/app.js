@@ -546,8 +546,8 @@ const SQLiteRepository = {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        user_id: userId,
-        user_name: userName
+        userId: userId,
+        userName: userName
       })
     });
 

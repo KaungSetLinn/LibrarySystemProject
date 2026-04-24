@@ -2,32 +2,32 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.bulkInsert('lending', [
+    await queryInterface.bulkInsert('lendings', [
       {
-        user_id: 1,
-        book_id: 100,
-        lending_date: '2026-04-01',
-        due_date: '2026-04-15',
-        return_date: null
+        userId: 1,
+        bookId: 100,
+        lendingDate: '2026-04-01',
+        dueDate: '2026-04-15',
+        returnDate: null
       },
       {
-        user_id: 2,
-        book_id: 102,
-        lending_date: '2026-04-05',
-        due_date: '2026-04-19',
-        return_date: null
+        userId: 2,
+        bookId: 102,
+        lendingDate: '2026-04-05',
+        dueDate: '2026-04-19',
+        returnDate: null
       },
       {
-        user_id: 3,
-        book_id: 104,
-        lending_date: '2026-04-10',
-        due_date: '2026-04-24',
-        return_date: null
+        userId: 3,
+        bookId: 104,
+        lendingDate: '2026-04-10',
+        dueDate: '2026-04-24',
+        returnDate: null
       }
     ]);
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete('lending', null, {});
+    await queryInterface.bulkDelete('lendings', null, {});
   }
 };

@@ -5,40 +5,40 @@ const User = require('./User');
 
 // Book ↔ Reservation (1:1)
 Book.hasOne(Reservation, {
-    foreignKey: 'book_id'
+    foreignKey: 'bookId'
 });
 
 Reservation.belongsTo(Book, {
-    foreignKey: 'book_id'
+    foreignKey: 'bookId'
 });
 
 // User ↔ Reservation (1:N)
 User.hasMany(Reservation, {
-    foreignKey: 'user_id'
+    foreignKey: 'userId'
 });
 
 Reservation.belongsTo(User, {
-    foreignKey: 'user_id'
+    foreignKey: 'userId'
 });
 
 //
 // ===== Book ↔ Lending (1:N) =====
 //
 Book.hasMany(Lending, {
-    foreignKey: 'book_id'
+    foreignKey: 'bookId'
 });
 
 Lending.belongsTo(Book, {
-    foreignKey: 'book_id'
+    foreignKey: 'bookId'
 });
 
 //
 // ===== User ↔ Lending (1:N) =====
 //
 User.hasMany(Lending, {
-    foreignKey: 'user_id'
+    foreignKey: 'userId'
 });
 
 Lending.belongsTo(User, {
-    foreignKey: 'user_id'
+    foreignKey: 'userId'
 });

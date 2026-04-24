@@ -28,7 +28,7 @@ exports.searchBooks = async (req, res) => {
 
         if (title && title.trim() !== "") {
             conditions.push({
-                book_name: { [Op.like]: `%${title.trim()}%` }
+                bookName: { [Op.like]: `%${title.trim()}%` }
             });
         }
 
@@ -49,8 +49,8 @@ exports.searchBooks = async (req, res) => {
         // =========================
 
         const whereCondition = {
-            can_reserve: true,
-            is_disabled: false,
+            canReserve: true,
+            isDisabled: false,
             ...(conditions.length > 0 && { [Op.and]: conditions })
         };
 
@@ -63,7 +63,7 @@ exports.searchBooks = async (req, res) => {
             where: whereCondition,
             limit: pageSize,
             offset,
-            order: [['book_id', 'ASC']],
+            order: [['bookId', 'ASC']],
             include: [
                 {
                     model: Reservation,
@@ -73,7 +73,7 @@ exports.searchBooks = async (req, res) => {
                     model: Lending,
                     required: false,
                     where: {
-                        return_date: { [Op.is]: null }
+                        returnDate: { [Op.is]: null }
                     }
                 }
             ]
@@ -92,15 +92,15 @@ exports.searchBooks = async (req, res) => {
 
             if (hasLending) {
                 status = "貸出中";
-                dueDate = book.Lendings[0].due_date;
+                dueDate = book.Lendings[0].dueDate;
             }
             else if (book.Reservation) {
                 status = "予約中";
             }
 
             return {
-                bookId: book.book_id,
-                title: book.book_name,
+                bookId: book.bookId,
+                title: book.bookName,
                 author: book.author,
                 category: book.category,
                 status,

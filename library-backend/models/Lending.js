@@ -4,42 +4,43 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../db/connection'); // adjust path if needed
 
 const Lending = sequelize.define('Lending', {
-  lending_id: {
+  lendingId: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
     allowNull: false
   },
 
-  user_id: {
+  userId: {
     type: DataTypes.INTEGER,
     allowNull: false
   },
 
-  book_id: {
+  bookId: {
     type: DataTypes.INTEGER,
     allowNull: false
   },
 
-  lending_date: {
+  lendingDate: {
     type: DataTypes.DATEONLY,
     allowNull: false,
     defaultValue: DataTypes.NOW
   },
 
-  due_date: {
+  dueDate: {
     type: DataTypes.DATEONLY,
     allowNull: false
   },
 
-  return_date: {
+  returnDate: {
     type: DataTypes.DATEONLY,
     allowNull: true
   }
 
 }, {
   tableName: 'lendings',
-  timestamps: false
+  timestamps: false,
+  underscored: false
 });
 
 module.exports = Lending;

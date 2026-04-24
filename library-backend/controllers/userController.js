@@ -25,13 +25,13 @@ exports.getUserById = async (req, res) => {
     }
 };
 
-// POST login by user_id and user_name
+// POST login by userId and userName
 exports.login = async (req, res) => {
     try {
-        const { user_id, user_name } = req.body;
+        const { userId, userName } = req.body;
 
         // Validation
-        if (!user_id || !user_name) {
+        if (!userId || !userName) {
             return res.status(400).json({
                 message: "Both id and name are required"
             });
@@ -39,7 +39,7 @@ exports.login = async (req, res) => {
 
         // Find user with BOTH conditions
         const user = await User.findOne({
-            where: { user_id, user_name }
+            where: { userId, userName }
         });
 
         if (!user) {
@@ -50,13 +50,13 @@ exports.login = async (req, res) => {
 
         // ✅ Store user in session
         req.session.user = {
-            userId: user.user_id,
-            userName: user.user_name
+            userId: user.userId,
+            userName: user.userName
         };
 
         return res.json({
-            userId: user.user_id,
-            userName: user.user_name
+            userId: user.userId,
+            userName: user.userName
         });
         
     } catch (error) {

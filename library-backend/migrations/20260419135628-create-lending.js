@@ -2,47 +2,47 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('lending', {
-      lending_id: {
+    await queryInterface.createTable('lendings', {
+      lendingId: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false
       },
 
-      user_id: {
+      userId: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: 'users',
-          key: 'user_id'
+          key: 'userId'
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
 
-      book_id: {
+      bookId: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: 'books',
-          key: 'book_id'
+          key: 'bookId'
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
 
-      lending_date: {
+      lendingDate: {
         type: Sequelize.DATEONLY,
         defaultValue: Sequelize.literal('CURRENT_DATE')
       },
 
-      due_date: {
+      dueDate: {
         type: Sequelize.DATEONLY,
         allowNull: false
       },
 
-      return_date: {
+      returnDate: {
         type: Sequelize.DATEONLY,
         allowNull: true
       }
@@ -51,16 +51,16 @@ module.exports = {
     // Add CHECK constraint (important)
     await queryInterface.sequelize.query(`
       CREATE TRIGGER lending_due_date_check
-      BEFORE INSERT ON lending
+      BEFORE INSERT ON lendings
       FOR EACH ROW
-      WHEN NEW.due_date < NEW.lending_date
+      WHEN NEW.dueDate < NEW.lendingDate
       BEGIN
-        SELECT RAISE(FAIL, 'due_date cannot be earlier than lending_date');
+        SELECT RAISE(FAIL, 'dueDate cannot be earlier than lendingDate');
       END;
     `);
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('lending');
+    await queryInterface.dropTable('lendings');
   }
 };
