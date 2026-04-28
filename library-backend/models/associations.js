@@ -1,6 +1,6 @@
 const Book = require('./Book');
 const Reservation = require('./Reservation');
-const Lending = require('./Lending');
+const Loan = require('./Loan');
 const User = require('./User');
 
 // Book ↔ Reservation (1:1)
@@ -22,23 +22,23 @@ Reservation.belongsTo(User, {
 });
 
 //
-// ===== Book ↔ Lending (1:N) =====
+// ===== Book ↔ Loan (1:N) =====
 //
-Book.hasMany(Lending, {
+Book.hasMany(Loan, {
     foreignKey: 'bookId'
 });
 
-Lending.belongsTo(Book, {
+Loan.belongsTo(Book, {
     foreignKey: 'bookId'
 });
 
 //
-// ===== User ↔ Lending (1:N) =====
+// ===== User ↔ Loan (1:N) =====
 //
-User.hasMany(Lending, {
+User.hasMany(Loan, {
     foreignKey: 'userId'
 });
 
-Lending.belongsTo(User, {
+Loan.belongsTo(User, {
     foreignKey: 'userId'
 });

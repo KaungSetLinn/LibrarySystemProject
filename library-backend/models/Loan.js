@@ -3,8 +3,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db/connection'); // adjust path if needed
 
-const Lending = sequelize.define('Lending', {
-  lendingId: {
+const Loan = sequelize.define('Loan', {
+  loanId: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
@@ -21,7 +21,7 @@ const Lending = sequelize.define('Lending', {
     allowNull: false
   },
 
-  lendingDate: {
+  loanDate: {
     type: DataTypes.DATEONLY,
     allowNull: false,
     defaultValue: DataTypes.NOW
@@ -38,9 +38,9 @@ const Lending = sequelize.define('Lending', {
   }
 
 }, {
-  tableName: 'lendings',
+  tableName: 'loans',
   timestamps: false,
   underscored: false
 });
 
-module.exports = Lending;
+module.exports = Loan;

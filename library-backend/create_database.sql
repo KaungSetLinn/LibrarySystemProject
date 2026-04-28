@@ -1,6 +1,6 @@
 CREATE TABLE books (
     bookId INTEGER NOT NULL PRIMARY KEY,
-    bookName TEXT NOT NULL,
+    title TEXT NOT NULL,
     author TEXT NOT NULL,
     category TEXT,
     canReserve BOOLEAN DEFAULT 1,
@@ -13,26 +13,29 @@ CREATE TABLE users (
     userName TEXT NOT NULL
 );
 
-CREATE TABLE lendings (
-    lendingId INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE loans (
+    loanId INTEGER PRIMARY KEY AUTOINCREMENT,
     userId INTEGER NOT NULL,
     bookId INTEGER NOT NULL,
-    lendingDate TEXT DEFAULT (DATE('now')),
+    loanDate TEXT DEFAULT (DATE('now')),
     dueDate TEXT NOT NULL,
     returnDate TEXT,
     FOREIGN KEY (userId) REFERENCES users(userId),
     FOREIGN KEY (bookId) REFERENCES books(bookId),
-    CHECK (dueDate >= lendingDate)
+    CHECK (dueDate >= loanDate)
 );
 
-create table reservations (
-	reservationId INTEGER PRIMARY KEY AUTOINCREMENT,
-    userId INTEGER NOT NULL,
-    bookId INTEGER NOT NULL UNIQUE,
-    reservedAt DATETIME NOT NULL DEFAULT (datetime('now')),
-
-    FOREIGN KEY (userId) REFERENCES users(userId),
-    FOREIGN KEY (bookId)   REFERENCES books(bookId)
+CREATE TABLE reservations (
+    reservationId INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER,
+    bookId INTEGER,
+    status TEXT CHECK(status IN('WAITING','RESERVED','CANCELLED')),
+    reservedAt TEXT,
+    pickupDeadline TEXT,
+    queueNo INTEGER,
+    cancelledAt TEXT,
+    FOREIGN KEY(userId) REFERENCES users(userId),
+    FOREIGN KEY(bookId) REFERENCES books(bookId)
 );
 
 insert into users values( '1', '佐藤翔太' );
@@ -2497,17 +2500,17 @@ insert into books values( '2438', '竜馬がゆく 4', '司馬遼太郎', '文�
 insert into books values( '2439', '竜馬がゆく 3', '司馬遼太郎', '文芸', true, false, '2025-12-06' );
 insert into books values( '2440', 'キリスト伝説集', 'ラーゲルレーヴ', '文芸', true, false, '2025-12-07' );
 
-insert into lendings (userId, bookId, lendingDate, dueDate, returnDate) values (1, 100, '2026-04-01', '2026-04-15', NULL);
-insert into lendings (userId, bookId, lendingDate, dueDate, returnDate) values (2, 102, '2026-04-05', '2026-04-19', NULL);
-insert into lendings (userId, bookId, lendingDate, dueDate, returnDate) values (3, 104, '2026-04-10', '2026-04-24', NULL);
+insert into loans (userId, bookId, loanDate, dueDate, returnDate) values (1, 1242, '2026-04-01', '2026-04-15', NULL);
+insert into loans (userId, bookId, loanDate, dueDate, returnDate) values (2, 102, '2026-04-05', '2026-04-19', NULL);
+insert into loans (userId, bookId, loanDate, dueDate, returnDate) values (3, 104, '2026-04-10', '2026-04-24', NULL);
 
-insert into reservations (userId, bookId, reservedAt) values (4,  15, '2026-04-01 09:00:00');
-insert into reservations (userId, bookId, reservedAt) values (6,  25, '2026-04-02 10:30:00');
-insert into reservations (userId, bookId, reservedAt) values (8,  35, '2026-04-05 11:45:00');
-insert into reservations (userId, bookId, reservedAt) values (10, 45, '2026-04-07 14:00:00');
-insert into reservations (userId, bookId, reservedAt) values (12, 55, '2026-04-09 15:15:00');
-insert into reservations (userId, bookId, reservedAt) values (14, 65, '2026-04-11 08:30:00');
-insert into reservations (userId, bookId, reservedAt) values (16, 75, '2026-04-14 09:00:00');
-insert into reservations (userId, bookId, reservedAt) values (17, 80, '2026-04-16 10:00:00');
-insert into reservations (userId, bookId, reservedAt) values (18, 85, '2026-04-18 13:30:00');
-insert into reservations (userId, bookId, reservedAt) values (19, 90, '2026-04-20 16:00:00');
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (1,  1241, 'RESERVED', '2026-04-01 09:00:00', '2026-04-08', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (2,  25, 'RESERVED', '2026-04-02 10:30:00', '2026-04-09', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (8,  35, 'RESERVED', '2026-04-05 11:45:00', '2026-04-12', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (10, 45, 'RESERVED', '2026-04-07 14:00:00', '2026-04-14', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (12, 55, 'RESERVED', '2026-04-09 15:15:00', '2026-04-16', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (14, 65, 'RESERVED', '2026-04-11 08:30:00', '2026-04-18', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (16, 75, 'RESERVED', '2026-04-14 09:00:00', '2026-04-21', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (17, 80, 'RESERVED', '2026-04-16 10:00:00', '2026-04-23', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (18, 85, 'RESERVED', '2026-04-18 13:30:00', '2026-04-25', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (19, 90, 'RESERVED', '2026-04-20 16:00:00', '2026-04-27', NULL, NULL);

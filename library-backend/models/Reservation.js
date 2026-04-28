@@ -5,21 +5,39 @@ const Reservation = sequelize.define('Reservation', {
     reservationId: {
         type: DataTypes.INTEGER,
         primaryKey: true,
+        allowNull: false,
         autoIncrement: true
     },
     userId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
     },
     bookId: {
         type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    status: {
+        type: DataTypes.TEXT,
         allowNull: false,
-        unique: true
+        validate: {
+            isIn: [['WAITING', 'RESERVED', 'CANCELLED']]
+        }
     },
     reservedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    pickupDeadline: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    queueNo: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    cancelledAt: {
+        type: DataTypes.TEXT,
+        allowNull: true
     }
 }, {
     tableName: 'reservations',
