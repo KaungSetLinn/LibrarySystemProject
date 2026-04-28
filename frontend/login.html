@@ -1,117 +1,142 @@
 <!DOCTYPE html>
 <html lang="ja">
 <!--
+  =============================================================================
   ファイル名 : login.html
-  概要       : ログイン画面。利用者認証を行い、予約状況画面へ遷移する。
-  保守担当   : Y.Toyoda
--->
+  概要       : G01 ログイン画面。利用者ID と利用者名で認証する。
+               認証成功時のみ G02 予約状況画面へ遷移する。
 
+  仕様書トレーサビリティ:
+    - 外部仕様書 G01 ログイン画面 / §4 画面遷移 / API-01 /api/auth/login
+    - 要求仕様書 RF-01 ログイン / RF-02 セッション管理 / RF-14 レスポンシブUI
+    - 内部仕様書 AU01 authenticateUser
+    - DB仕様書   §5.1 users テーブル
+    - テスト仕様 TC-LOG-01〜06
+
+  画面要素:
+    - 利用者ID 入力 / 利用者名 入力（外部仕様§6 入力データ仕様）
+    - DBタイプ切替（テスト用 TC-COM-02）
+    - 共通メッセージ領域（外部仕様§10）
+    - ブラウザ判定表示（監査ログ用）
+
+  関連 JS: js/screens/screen-login.js（Screen.initLogin）
+  作成日 : 2026-04-26
+  =============================================================================
+-->
 <head>
-  <!-- 文字コードを UTF-8 に固定する。 -->
   <meta charset="UTF-8" />
-  <!-- モバイル表示を正しく行うための viewport を設定する。 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- ページタイトルを定義する。 -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
   <title>図書予約システム ログイン</title>
-  <!-- 共通スタイルシートを読み込む。 -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body class="login-body" data-page="login">
-  <!-- ログイン画面のメインコンテナを定義する。 -->
-  <!-- ログイン画面のメインコンテナを定義する。 -->
+  <!-- メインカード（PC: 2カラム / SP: 1カラム） -->
   <main class="login-card">
-    <!-- 左右 2 カラムの導入レイアウトを定義する。 -->
     <div class="login-grid">
-      <!-- 画面説明エリアを定義する。 -->
+      <!-- ===== 左ペイン：システム説明（ブランディング） ===== -->
       <section class="login-side">
-        <!-- 内側の余白コンテナを定義する。 -->
         <div class="login-side-inner">
-          <!-- 導入ラベルを表示する。 -->
           <span class="login-eyebrow">図書館サービス</span>
-          <!-- 画面の主見出しを表示する。 -->
           <h1>図書館の蔵書を、<br />すばやく探して予約する。</h1>
-          <!-- システム概要を表示する。 -->
           <p>本画面から予約状況確認、蔵書検索、予約登録、通知確認までを一連の流れで利用できます。</p>
 
-          <!-- 設計意図を一覧表示する。 -->
           <div class="feature-grid">
             <div class="feature-point">
               <strong>予約状況をすぐ確認</strong>
-              <span>現在の予約状況や通知をログイン後すぐに確認できます。</span>
+              <span>現在の予約・残枠・受取期限をログイン直後に把握できます。</span>
             </div>
             <div class="feature-point">
               <strong>検索から予約まで最短導線</strong>
-              <span>書籍検索から予約登録まで迷いにくい画面遷移に整理しています。</span>
+              <span>クイック検索／詳細検索の両方を用意し、迷わず操作できます。</span>
             </div>
             <div class="feature-point">
-              <strong>スマートフォン対応</strong>
-              <span>PC とスマートフォンのどちらでも見やすく利用できます。</span>
+              <strong>iPhone SE まで対応</strong>
+              <span>PC とスマートフォンで同じ操作が完了する設計です。</span>
             </div>
             <div class="feature-point">
-              <strong>データ管理に対応</strong>
-              <span>配布済みデータベース例を反映した初期データで利用を開始できます。</span>
+              <strong>Excel/SQLite 切替</strong>
+              <span>同一 API でデータソースを切替えてテストできます。</span>
             </div>
           </div>
 
-          <!-- 補足説明を表示する。 -->
           <div class="login-feature-note">
             <strong>ご利用案内</strong>
-            <p>初期データを登録済みです。ログイン後は蔵書検索と予約処理をすぐに利用できます。必要に応じてマイページからデータ取込・出力を行えます。</p>
+            <p>初期データを登録済みです。ログイン後は蔵書検索と予約処理がすぐ利用できます。
+               マイページから JSON データ取込・出力・初期化が行えます。</p>
           </div>
         </div>
       </section>
 
-      <!-- ログインフォームエリアを定義する。 -->
+      <!-- ===== 右ペイン：ログインフォーム ===== -->
       <section>
-        <!-- フォームの内側コンテナを定義する。 -->
         <div class="login-form-inner">
-          <!-- 見出しを表示する。 -->
           <h2>ログイン</h2>
-          <!-- 説明文を表示する。 -->
-          <div class="muted">利用者 ID と利用者名を入力してログインしてください。初期データでは「1 / 佐藤翔太」で確認できます。</div>
+          <div class="muted">
+            利用者 ID と利用者名を入力してください。<br />
+            初期データでは「<strong>1 / 佐藤翔太</strong>」で確認できます。
+          </div>
 
-          <!-- 共通メッセージ表示領域を配置する。 -->
+          <!-- 共通メッセージ領域（外部仕様 §10）-->
           <div class="app-message-host spacer-top" data-message-host></div>
 
-          <!-- ログインフォームを定義する。 -->
-          <form id="loginForm">
-            <!-- 入力欄グリッドを定義する。 -->
+          <!-- ログインフォーム（AU01 / RF-01）-->
+          <form id="loginForm" autocomplete="off" novalidate>
             <div class="form-grid single">
               <div class="field">
                 <label for="userId">利用者ID</label>
-                <input id="userId" name="userId" class="input" type="text" inputmode="numeric" placeholder="例: 1" />
+                <!-- 半角数字を想定（外部仕様§6）。type=text にして先頭ゼロを許容 -->
+                <input id="userId" name="userId" class="input"
+                       type="text" inputmode="numeric"
+                       placeholder="例: 1" autocomplete="username" />
                 <small>仕様に合わせて半角数字を基本とします。</small>
               </div>
 
               <div class="field">
                 <label for="userName">利用者名</label>
-                <input id="userName" name="userName" class="input" type="text" placeholder="例: 佐藤翔太" />
+                <input id="userName" name="userName" class="input"
+                       type="text" placeholder="例: 佐藤翔太"
+                       autocomplete="name" />
               </div>
 
+              <!-- データソース切替（TC-COM-02）-->
+              <div class="field">
+                <label for="dbTypeSelect">データソース（テスト用切替）</label>
+                <select id="dbTypeSelect" class="select">
+                  <option value="Excel">Excel（既定）</option>
+                  <option value="SQLite">SQLite（スタブ）</option>
+                </select>
+                <small>※ どちらを選んでも同じ API で動作します。</small>
+              </div>
+
+              <!-- ブラウザ判定（監査ログ用、表示のみ）-->
               <div class="field">
                 <label for="browserType">ブラウザの種類</label>
-                <input id="browserType" class="input" type="text" value="判定中" readonly data-browser-field />
+                <input id="browserType" class="input" type="text"
+                       value="判定中" readonly data-browser-field />
               </div>
             </div>
 
-            <!-- ボタン群を定義する。 -->
+            <!-- 操作ボタン -->
             <div class="actions">
               <button class="btn btn-primary" type="submit">ログイン</button>
-              <button class="btn btn-light" type="button" data-clear-login>入力をクリア</button>
+              <button class="btn btn-light"   type="button" data-clear-login>入力をクリア</button>
             </div>
           </form>
 
-          <!-- 動作概要を表示する。 -->
+          <!-- ログイン後にできることの案内（迷わなさ）-->
           <div class="helper-panel">
             <div class="list-title">ログイン後にできること</div>
             <ul class="compact-list">
               <li>現在予約している本と受取期限の確認</li>
-              <li>書籍名・著者名・分類による AND 検索</li>
+              <li>書名・著者名・分類による AND 検索とページング</li>
               <li>予約登録、予約取消、通知確認、データ取込・出力</li>
             </ul>
           </div>
 
-          <!-- フッター情報を表示する。 -->
+          <!-- フッター（動作日と設定サマリ） -->
           <div class="login-footer">
             <span>動作日: <span data-today></span></span>
             <span data-config-summary>設定読込中</span>
@@ -121,12 +146,22 @@
     </div>
   </main>
 
-  <!-- 実行時設定を読み込む。 -->
-    <!-- 共通設定・初期データ・画面制御スクリプトを読み込む。 -->
-  <script src="library-config.js"></script>
-  <!-- 初期データを読み込む。 -->
-  <script src="library-seed.js"></script>
-  <!-- 画面制御ロジックを読み込む。 -->
-  <script src="app.js"></script>
+  <!-- ============================================================ -->
+  <!-- スクリプト読込順（必ず守る）                                  -->
+  <!--   1. 既定設定 → 2. シードデータ → 3. DataSource契約 →         -->
+  <!--   4. ExcelAdapter → 5. SQLiteStubAdapter → 6. core/* →        -->
+  <!--   7. 画面JS → 8. app.js                                       -->
+  <!-- ============================================================ -->
+  <script src="js/library-config.js"></script>
+  <script src="js/library-seed.js"></script>
+  <script src="js/datasource/data-source.js"></script>
+  <script src="js/datasource/excel-adapter.js"></script>
+  <script src="js/datasource/sqlite-stub-adapter.js"></script>
+  <script src="js/core/config-manager.js"></script>
+  <script src="js/core/repository-factory.js"></script>
+  <script src="js/core/service.js"></script>
+  <script src="js/core/ui-common.js"></script>
+  <script src="js/screens/screen-login.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

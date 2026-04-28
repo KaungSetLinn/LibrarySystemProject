@@ -1,0 +1,469 @@
+/*
+ * =============================================================================
+ * ファイル名 : css/style.css
+ * 概要       : 図書予約システム共通スタイル。
+ *              BIZ UDPゴシックを基準フォントに、PC(1280×720)・iPhone SE3
+ *              (375×667) を主要な検証サイズとしてレイアウトする。
+ *
+ * 仕様書トレーサビリティ:
+ *   - 要求仕様書 RF-14 レスポンシブUI / §8 操作性
+ *   - 外部仕様書 §10 UI 共通仕様（共通ヘッダ／メッセージ／色分け）
+ *   - テスト仕様 TC-UI-01〜08
+ *
+ * UI設計の指針:
+ *   - 分かりやすさ : ボタン名は具体的な動詞＋目的語
+ *   - 迷わなさ     : 主要操作を画面右上に大きく、画面ごとに位置を固定
+ *   - 一貫性       : 色・角丸・余白を CSS変数で統一
+ *   - 誤操作防止   : 破壊的操作は warn/danger 色で区別
+ *   - 状態の見える化 : msg-success/info/warn/error を色分け
+ *   - 操作回数の少なさ : ボトムナビを常設
+ *   - 重要情報の強調 : サマリ・残枠を画面上部に大きく
+ *   - ユーザー目線 : 「貸出中」「予約中」など現場語
+ * =============================================================================
+ */
+
+/* ==========================================================================
+ * セクション 0 : Webフォント（BIZ UDPゴシック）
+ *   - オンラインなら Google Fonts、オフラインは OS フォントへフォールバック
+ * ========================================================================== */
+@import url("https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap");
+
+/* ==========================================================================
+ * セクション 1 : デザイントークン
+ * ========================================================================== */
+:root {
+  --bg:           #eef3fb;
+  --bg-soft:      #f6f9ff;
+  --surface:      #ffffff;
+  --surface-soft: #f3f6fc;
+  --surface-dark: #0e1c34;
+  --line:         #d6dfee;
+  --line-strong:  #b9c6dc;
+  --text:         #15233f;
+  --muted:        #5a6a85;
+
+  --primary:      #1f55d8;
+  --primary-dark: #163fa6;
+  --primary-soft: #e8eefc;
+  --accent:       #6948ff;
+  --accent-soft:  #f0ecff;
+
+  --success:      #0a7a4b;
+  --success-bg:   #e6f8ee;
+  --info:         #0e62b8;
+  --info-bg:      #e7f0fb;
+  --warn:         #946100;
+  --warn-bg:      #fff5dd;
+  --danger:       #b8302f;
+  --danger-bg:    #fdebea;
+
+  --radius:       18px;
+  --radius-md:    14px;
+  --radius-sm:    10px;
+  --shadow:       0 14px 36px rgba(15,28,52,0.08);
+  --shadow-strong:0 24px 60px rgba(15,28,52,0.16);
+
+  --max-width:    1180px;
+  --header-h:     64px;
+  --phone-w:      375px;
+  --phone-h:      667px;
+}
+
+/* ==========================================================================
+ * セクション 2 : リセットとタイポグラフィ
+ * ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0; min-height: 100%;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top right, rgba(105,72,255,0.10), transparent 28%),
+    radial-gradient(circle at top left,  rgba(31,85,216,0.10), transparent 28%),
+    linear-gradient(180deg, #f8faff 0%, var(--bg) 60%, #dde8fa 100%);
+  font-family: "BIZ UDPGothic", "BIZ UDGothic",
+               "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", "Meiryo",
+               system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px; line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { padding: calc(var(--header-h) + 24px) 20px 80px; }
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 3px solid rgba(31,85,216,0.4); outline-offset: 2px; border-radius: 4px; }
+
+h1, h2, h3 { line-height: 1.35; margin: 0 0 12px; font-weight: 700; letter-spacing: 0.02em; }
+h1 { font-size: 28px; } h2 { font-size: 22px; } h3 { font-size: 18px; }
+
+p { margin: 0 0 8px; }
+.muted { color: var(--muted); }
+.spacer-top { margin-top: 16px; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+
+/* ==========================================================================
+ * セクション 3 : 共通ヘッダ
+ * ========================================================================== */
+.app-header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--line);
+  z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+}
+.app-header .brand {
+  display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.04em;
+}
+.app-header .brand .logo {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700;
+}
+.app-header nav { display: flex; gap: 4px; }
+.app-header nav a {
+  padding: 8px 14px; border-radius: 999px; color: var(--text);
+  font-weight: 500; font-size: 14px;
+}
+.app-header nav a:hover { background: var(--surface-soft); text-decoration: none; }
+.app-header nav a.is-active { background: var(--primary); color: #fff; }
+.app-header .user-area {
+  display: flex; align-items: center; gap: 12px; font-size: 14px;
+}
+.app-header .user-area .name { color: var(--muted); }
+
+/* ==========================================================================
+ * セクション 4 : 共通コンテナ
+ * ========================================================================== */
+.container { max-width: var(--max-width); margin: 0 auto; }
+.page-title { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.page-title h1 { margin: 0; }
+.page-title .desc { color: var(--muted); font-size: 14px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.card + .card { margin-top: 16px; }
+.card-title {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
+}
+.card-title h2 { margin: 0; font-size: 18px; }
+
+.grid { display: grid; gap: 16px; }
+.grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* ==========================================================================
+ * セクション 5 : フォーム
+ * ========================================================================== */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-weight: 700; font-size: 13px; color: var(--text); }
+.field small { color: var(--muted); font-size: 12px; }
+
+.input, .select, textarea.input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-family: inherit; font-size: 15px; color: var(--text);
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.input:hover, .select:hover { border-color: var(--line-strong); }
+.input:focus, .select:focus, textarea.input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(31,85,216,0.18);
+}
+.input[readonly] { background: var(--surface-soft); color: var(--muted); }
+textarea.input { min-height: 120px; resize: vertical; line-height: 1.6; }
+
+.checkbox { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.checkbox input { width: 18px; height: 18px; accent-color: var(--primary); }
+
+.form-grid { display: grid; gap: 14px; }
+.form-grid.single { grid-template-columns: 1fr; }
+.form-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.form-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ==========================================================================
+ * セクション 6 : ボタン
+ * ========================================================================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 20px; min-height: 42px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  transition: transform .08s ease, background .15s, border-color .15s, color .15s, box-shadow .15s;
+  user-select: none;
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--primary); color: #fff;
+  box-shadow: 0 8px 18px rgba(31,85,216,0.22);
+}
+.btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+
+.btn-light {
+  background: var(--surface); color: var(--text); border-color: var(--line);
+}
+.btn-light:hover:not(:disabled) { background: var(--surface-soft); }
+
+.btn-warn {
+  background: #fff; color: var(--warn); border-color: #f0c97a;
+}
+.btn-warn:hover:not(:disabled) { background: var(--warn-bg); }
+
+.btn-danger {
+  background: #fff; color: var(--danger); border-color: #e9b3b1;
+}
+.btn-danger:hover:not(:disabled) { background: var(--danger-bg); }
+
+.btn-ghost { background: transparent; color: var(--primary); border-color: transparent; }
+.btn-ghost:hover:not(:disabled) { background: var(--primary-soft); }
+
+.btn-sm { min-height: 32px; padding: 6px 12px; font-size: 13px; }
+.btn-block { width: 100%; }
+
+/* ==========================================================================
+ * セクション 7 : メッセージ表示
+ * ========================================================================== */
+.app-message-host { min-height: 0; margin-bottom: 12px; }
+.msg {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1.5px solid; font-size: 14px; line-height: 1.55;
+}
+.msg .msg-icon {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; flex: 0 0 auto;
+}
+.msg-success { background: var(--success-bg); border-color: #b9e6cd; color: var(--success); }
+.msg-success .msg-icon { background: var(--success); }
+.msg-success .msg-icon::before { content: "✓"; }
+.msg-info    { background: var(--info-bg);    border-color: #bcd6f3; color: var(--info); }
+.msg-info    .msg-icon { background: var(--info); }
+.msg-info    .msg-icon::before { content: "i"; font-style: italic; }
+.msg-warn    { background: var(--warn-bg);    border-color: #f0c97a; color: var(--warn); }
+.msg-warn    .msg-icon { background: var(--warn); }
+.msg-warn    .msg-icon::before { content: "!"; }
+.msg-error   { background: var(--danger-bg);  border-color: #e9b3b1; color: var(--danger); }
+.msg-error   .msg-icon { background: var(--danger); }
+.msg-error   .msg-icon::before { content: "×"; }
+
+/* ==========================================================================
+ * セクション 8 : テーブル
+ * ========================================================================== */
+.table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  background: var(--surface); border-radius: var(--radius-md); overflow: hidden;
+}
+.table thead th {
+  background: var(--surface-soft);
+  text-align: left; font-size: 12px; letter-spacing: 0.05em;
+  color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.table tbody td {
+  padding: 12px; border-bottom: 1px solid var(--line); font-size: 14px;
+  vertical-align: middle;
+}
+.table tbody tr:hover { background: var(--surface-soft); }
+.table tbody tr:last-child td { border-bottom: none; }
+
+.empty-state {
+  padding: 32px; text-align: center; color: var(--muted);
+  background: var(--surface-soft); border-radius: var(--radius-sm);
+  border: 1px dashed var(--line);
+}
+
+/* バッジ（status / actionState 表示用） */
+.badge {
+  display: inline-block;
+  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  border: 1px solid var(--line); white-space: nowrap;
+}
+.badge-available { background: var(--success-bg); color: var(--success); border-color: #b9e6cd; }
+.badge-onloan    { background: var(--warn-bg);    color: var(--warn);    border-color: #f0c97a; }
+.badge-reserved  { background: var(--accent-soft); color: var(--accent); border-color: #cabffa; }
+.badge-disabled  { background: #ecedf2; color: #6b7691; border-color: #d3d8e1; }
+.badge-waiting   { background: #fff4ea; color: #b95300; border-color: #f3c597; }
+
+/* サマリ系のカード（残枠など強調） */
+.summary {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+}
+.summary .stat {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-md); padding: 16px; box-shadow: var(--shadow);
+  position: relative;
+}
+.summary .stat .label { font-size: 12px; color: var(--muted); }
+.summary .stat .value { font-size: 28px; font-weight: 700; color: var(--text); margin-top: 6px; }
+.summary .stat .sub   { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.summary .stat.is-warn { border-color: #f0c97a; background: var(--warn-bg); }
+.summary .stat.is-warn .value { color: var(--warn); }
+
+/* ページャ */
+.pager { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+
+/* 条件サマリ */
+.criteria-summary { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+
+/* ==========================================================================
+ * セクション 9 : ログイン画面（G01）専用レイアウト
+ * ========================================================================== */
+.login-body {
+  padding: 0; min-height: 100vh; display: grid; place-items: center;
+}
+.login-card {
+  width: min(960px, calc(100vw - 32px));
+  background: var(--surface);
+  border-radius: 24px; box-shadow: var(--shadow-strong);
+  overflow: hidden; border: 1px solid var(--line);
+}
+.login-grid { display: grid; grid-template-columns: 1fr 1fr; min-height: 560px; }
+.login-side {
+  background: linear-gradient(155deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff; padding: 36px;
+  display: flex; align-items: center;
+}
+.login-side .login-side-inner { width: 100%; }
+.login-side h1 { color: #fff; font-size: 28px; line-height: 1.4; }
+.login-side .login-eyebrow {
+  display: inline-block; padding: 4px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.18); font-size: 12px; font-weight: 700;
+  margin-bottom: 14px;
+}
+.login-side p { color: rgba(255,255,255,0.92); }
+.feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.feature-point {
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 12px; padding: 12px;
+}
+.feature-point strong { display: block; margin-bottom: 4px; }
+.feature-point span { color: rgba(255,255,255,0.92); font-size: 12px; line-height: 1.55; }
+.login-feature-note {
+  margin-top: 16px; padding: 12px;
+  border: 1px dashed rgba(255,255,255,0.4); border-radius: 12px;
+  font-size: 12px; line-height: 1.55;
+}
+.login-feature-note strong { display: block; margin-bottom: 4px; }
+.login-form-inner { padding: 36px; }
+.helper-panel {
+  margin-top: 18px; background: var(--surface-soft);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px;
+}
+.helper-panel .list-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+.compact-list { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text); }
+.compact-list li { margin-bottom: 4px; }
+.login-footer {
+  display: flex; justify-content: space-between; gap: 12px;
+  margin-top: 18px; font-size: 12px; color: var(--muted); flex-wrap: wrap;
+}
+
+/* ==========================================================================
+ * セクション 10 : モバイル下部ナビ
+ * ========================================================================== */
+.bottom-nav {
+  display: none; /* PC では非表示 */
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(255,255,255,0.96);
+  border-top: 1px solid var(--line);
+  z-index: 40;
+}
+.bottom-nav a {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 4px; color: var(--muted); font-size: 11px; font-weight: 700;
+}
+.bottom-nav a .bn-i { font-size: 20px; }
+.bottom-nav a.is-active { color: var(--primary); }
+
+/* PC/SP切替プレビューボタン */
+.view-toggle {
+  position: fixed; right: 16px; bottom: 16px; z-index: 60;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 10px 14px; font-size: 13px; cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+/* ==========================================================================
+ * セクション 11 : レスポンシブ（iPhone SE3 = 375×667）
+ * ========================================================================== */
+@media (max-width: 900px) {
+  body { padding: calc(var(--header-h) + 16px) 12px 90px; }
+  .app-header { padding: 0 14px; }
+  .app-header nav { display: none; }
+  .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+  .summary { grid-template-columns: repeat(2, 1fr); }
+  .form-grid.cols-2, .form-grid.cols-3 { grid-template-columns: 1fr; }
+  .login-grid { grid-template-columns: 1fr; }
+  .login-side { padding: 24px; }
+  .login-form-inner { padding: 24px; }
+
+  /* テーブルをカード状にスタックする（td に data-label を JS で付与） */
+  .table thead { display: none; }
+  .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+  .table tr {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); margin-bottom: 8px; padding: 10px;
+  }
+  .table tbody td {
+    border-bottom: 1px dashed var(--line); padding: 8px 4px;
+    display: grid; grid-template-columns: 96px 1fr; column-gap: 8px;
+  }
+  .table tbody td::before {
+    content: attr(data-label); color: var(--muted); font-size: 12px;
+  }
+  .table tbody td:last-child { border-bottom: none; }
+  .bottom-nav { display: flex; }
+}
+
+/* PC でも「強制スマホプレビュー」したい場合 */
+body.force-phone {
+  width: var(--phone-w); min-height: var(--phone-h);
+  margin: 24px auto; border: 8px solid #1c1f2a; border-radius: 36px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+  padding: calc(var(--header-h) + 16px) 12px 90px;
+  background: var(--bg);
+}
+body.force-phone .app-header { position: absolute; left: 0; right: 0; border-radius: 28px 28px 0 0; }
+body.force-phone .bottom-nav { display: flex; left: 0; right: 0; border-radius: 0 0 28px 28px; }
+body.force-phone .grid.cols-2, body.force-phone .grid.cols-3, body.force-phone .grid.cols-4
+  { grid-template-columns: 1fr; }
+body.force-phone .summary { grid-template-columns: repeat(2, 1fr); }
+body.force-phone .form-grid.cols-2, body.force-phone .form-grid.cols-3
+  { grid-template-columns: 1fr; }
+
+/* PC基準（1280以上） */
+@media (min-width: 1280px) {
+  .container { max-width: 1180px; }
+  body { padding: calc(var(--header-h) + 32px) 24px 40px; }
+}
+
+/* 印刷時 */
+@media print {
+  .app-header, .bottom-nav, .view-toggle, .app-message-host, .actions { display: none !important; }
+  body { padding: 0; }
+  .card { box-shadow: none; border: 1px solid #ccc; }
+}

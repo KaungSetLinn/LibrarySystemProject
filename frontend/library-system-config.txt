@@ -1,3 +1,4 @@
-データベース,Excel
-予約最大可能冊数,3
-検索結果の表示数,10
+dbType=Excel
+maxReservations=3
+searchPageSize=10
+pickupDeadlineDays=7

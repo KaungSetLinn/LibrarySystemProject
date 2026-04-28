@@ -1,163 +1,138 @@
 <!DOCTYPE html>
 <html lang="ja">
 <!--
+  =============================================================================
   ファイル名 : search-results.html
-  概要       : 検索結果画面。検索結果一覧と予約操作を表示する。
-  保守担当   : Y.Toyoda
--->
+  概要       : G04 検索結果画面（予約登録の起点）。
+               sessionStorage の検索条件で Service.searchBooks を呼び、
+               外部仕様§7.2 の正式形式（count/page/pageSize/totalPages/books[]）
+               の結果を描画する。
+               actionState に応じて予約ボタンの活性／文言が制御される。
 
+  仕様書トレーサビリティ:
+    - 外部仕様書 G04 検索結果 / §7.2 searchBooks /
+                 §10 actionState 仕様 / API-04 reservations
+    - 要求仕様書 RF-06 検索結果表示 / RF-07 予約登録 / RF-14 レスポンシブUI
+    - 内部仕様書 SR02 / SR03 / SR04 / RV03 reserveBook
+    - テスト仕様 TC-SRH-01〜10 / TC-RES-01〜06
+
+  関連 JS: js/screens/screen-search-results.js
+  =============================================================================
+-->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>図書予約システム 検索結果</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>検索結果 - 図書予約システム</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body data-page="search-results">
-  <!-- 画面全体の共通シェルを定義する。 -->
-  <div class="shell">
-    <!-- 上部ナビゲーションと利用者情報を表示する。 -->
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <div class="brand-mark">図</div>
-          <div class="brand-copy">
-            <strong>図書予約システム</strong>
-            <span>検索結果・予約登録</span>
-          </div>
-        </div>
-        <div class="header-side">
-          <span class="date-chip" data-today></span>
-          <span class="user-chip">利用者: <span data-user-name>---</span></span>
-          <a class="btn btn-light" href="login.html" data-logout-link>ログアウト</a>
-        </div>
+
+  <!-- ===== 共通ヘッダ ===== -->
+  <header class="app-header" role="banner">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">図</span>
+      <span>図書予約システム</span>
+    </div>
+    <nav aria-label="メインナビ">
+      <a href="reservation-status.html" data-nav="reservation-status">予約状況</a>
+      <a href="advanced-search.html"    data-nav="advanced-search">蔵書検索</a>
+      <a href="notification.html"       data-nav="notification">通知</a>
+      <a href="mypage.html"             data-nav="mypage">マイページ</a>
+    </nav>
+    <div class="user-area">
+      <span class="name" data-session-name>—</span>
+      <a href="#" class="btn btn-light btn-sm" data-logout>ログアウト</a>
+    </div>
+  </header>
+
+  <!-- ===== メイン ===== -->
+  <main class="container" role="main">
+    <div class="page-title">
+      <h1>検索結果</h1>
+      <span class="desc"><span data-result-meta>—</span></span>
+    </div>
+
+    <!-- 共通メッセージ領域 -->
+    <div class="app-message-host" data-message-host></div>
+
+    <!-- 検索条件サマリ + 編集導線 -->
+    <section class="card">
+      <div class="card-title">
+        <h2>適用中の検索条件</h2>
+        <a href="#" class="btn btn-ghost btn-sm" data-edit-criteria>
+          ＋ 条件を編集する
+        </a>
       </div>
-      <!-- 主要画面へ移動する共通ナビゲーションを表示する。 -->
-      <nav class="nav-tabs">
-        <a class="nav-tab" data-nav href="reservation-status.html">予約状況</a>
-        <a class="nav-tab" data-nav href="search-results.html">検索結果</a>
-        <a class="nav-tab" data-nav href="advanced-search.html">詳細検索</a>
-        <a class="nav-tab" data-nav href="mypage.html">マイページ</a>
-      </nav>
-    </header>
-
-    <!-- メインコンテンツ領域を定義する。 -->
-    <main class="container">
-      <!-- 検索条件の要約と画面操作を表示する。 -->
-      <section class="page-hero">
-        <div class="page-hero-head">
-          <div>
-            <span class="eyebrow">検索結果</span>
-            <h1 class="page-title">条件に合う本を、すばやく比較して予約</h1>
-            <p class="page-desc">書籍名・著者名・分類の条件で検索し、状態に応じた予約可否を表示します。</p>
-          </div>
-          <div class="page-actions">
-            <a class="btn btn-light" href="reservation-status.html">予約状況へ戻る</a>
-            <a class="btn btn-secondary" href="advanced-search.html">条件を変更</a>
-          </div>
-        </div>
-        <div class="search-summary">
-          <div class="search-summary-item">
-            <div class="label">書籍名</div>
-            <div class="value" data-summary-title>---</div>
-          </div>
-          <div class="search-summary-item">
-            <div class="label">著者名</div>
-            <div class="value" data-summary-author>---</div>
-          </div>
-          <div class="search-summary-item">
-            <div class="label">検索件数</div>
-            <div class="value" data-summary-count>0件</div>
-          </div>
-        </div>
-        <div class="hero-tags" data-search-tags></div>
-      </section>
-
-      <div class="app-message-host spacer-top" data-message-host></div>
-
-      <section class="card spacer-top">
-        <div class="card-body">
-          <form id="searchToolbarForm" class="search-toolbar">
-            <input id="toolbarTitle" name="title" class="input" type="text" placeholder="書籍名" />
-            <input id="toolbarAuthor" name="author" class="input" type="text" placeholder="著者名" />
-            <select id="toolbarCategory" name="category" class="select">
-              <option value="">すべての分類</option>
-              <option value="文芸">文芸</option>
-              <option value="情報科学">情報科学</option>
-              <option value="法律">法律</option>
-              <option value="生活">生活</option>
-              <option value="福祉">福祉</option>
-              <option value="学術">学術</option>
-            </select>
-            <select id="toolbarSort" name="sort" class="select">
-              <option value="bookId">書籍ID順</option>
-              <option value="title">書籍名順</option>
-              <option value="author">著者名順</option>
-              <option value="arrivalDateDesc">新着順</option>
-            </select>
-            <button class="btn btn-primary" type="submit">再検索</button>
-          </form>
-          <div class="hero-tags spacer-top" data-search-active-filters></div>
-        </div>
-      </section>
-
-      <div class="layout-grid cols-2 spacer-top">
-        <section class="card">
-          <div class="card-header">
-            <div>
-              <h2>検索結果一覧</h2>
-              <p class="card-subtitle">資料の状態に応じて操作可能なボタンを切り替えます。</p>
-            </div>
-            <span class="soft-chip" data-search-page-size>1ページあたり 10 件</span>
-          </div>
-          <div class="card-body">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>書籍ID</th>
-                    <th>書籍名</th>
-                    <th>著者名</th>
-                    <th>分類</th>
-                    <th>状態</th>
-                    <th>返却予定</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody data-search-results-body></tbody>
-              </table>
-            </div>
-            <div class="empty-state app-hidden" data-search-empty>条件に合う資料は見つかりませんでした。</div>
-            <div class="pagination" data-pagination></div>
-          </div>
-        </section>
-
-        <div class="panel-stack">
-          <section class="card">
-            <div class="card-header">
-              <div>
-                <h2>現在の予約状況</h2>
-                <p class="card-subtitle">予約上限に近いときでも検索画面で即時把握できます。</p>
-              </div>
-            </div>
-            <div class="card-body panel-stack" data-search-side-status></div>
-          </section>
-
-          <section class="card">
-            <div class="card-header">
-              <div>
-                <h2>検索のヒント</h2>
-                <p class="card-subtitle">利用者の行動判断に必要な補助情報を表示します。</p>
-              </div>
-            </div>
-            <div class="card-body panel-stack" data-search-hints></div>
-          </section>
-        </div>
+      <div class="criteria-summary" data-criteria-summary>
+        <span class="muted">読み込み中…</span>
       </div>
-    </main>
-  </div>
-    <!-- 共通設定・初期データ・画面制御スクリプトを読み込む。 -->
-  <script src="library-config.js"></script>
-  <script src="library-seed.js"></script>
-  <script src="app.js"></script>
+    </section>
+
+    <!-- ===== 結果テーブル ===== -->
+    <section class="card spacer-top" aria-labelledby="resultListTitle">
+      <div class="card-title">
+        <h2 id="resultListTitle">結果一覧</h2>
+        <span class="muted" style="font-size:13px;">
+          ボタンの色：<span class="badge badge-available">予約可</span>
+          <span class="badge badge-onloan">待機予約可</span>
+          <span class="badge badge-reserved">予約済</span>
+          <span class="badge badge-disabled">不可</span>
+        </span>
+      </div>
+
+      <table class="table" aria-describedby="resultListTitle">
+        <thead>
+          <tr>
+            <th>書籍ID</th>
+            <th>書名</th>
+            <th>著者</th>
+            <th>分類</th>
+            <th>状態</th>
+            <th>返却予定日</th>
+            <th>予約操作</th>
+          </tr>
+        </thead>
+        <tbody data-search-tbody></tbody>
+      </table>
+
+      <div class="empty-state" data-search-empty style="display:none">
+        条件に一致する書籍は見つかりませんでした。<br />
+        <a href="#" data-edit-criteria>検索条件を変更する</a>
+      </div>
+
+      <!-- ページャ（外部仕様§7.2 ページング）-->
+      <div class="pager" data-pager></div>
+    </section>
+
+    <!-- 操作ガイド -->
+    <section class="card spacer-top">
+      <div class="card-title">
+        <h2>予約操作について</h2>
+      </div>
+      <ul class="compact-list">
+        <li><strong>予約する</strong>（青）：在庫があります。押下後、確認ダイアログで予約完了します。</li>
+        <li><strong>予約する（貸出中）</strong>（橙）：現在貸出中の本の<strong>待機予約</strong>を行います。返却され次第、受取期限が確定します。</li>
+        <li><strong>予約済</strong>：すでに予約されています。取消は<a href="reservation-status.html">予約状況画面</a>から行えます。</li>
+        <li><strong>不可</strong>：廃棄など、予約対象外の書籍です。</li>
+        <li>予約上限（既定 3 冊）に達すると、ボタンは押せても予約処理時にエラー（E02）になります。</li>
+      </ul>
+    </section>
+  </main>
+
+  <button type="button" class="view-toggle" data-view-toggle>📱 スマホ表示でプレビュー</button>
+
+  <!-- スクリプト -->
+  <script src="js/library-config.js"></script>
+  <script src="js/library-seed.js"></script>
+  <script src="js/datasource/data-source.js"></script>
+  <script src="js/datasource/excel-adapter.js"></script>
+  <script src="js/datasource/sqlite-stub-adapter.js"></script>
+  <script src="js/core/config-manager.js"></script>
+  <script src="js/core/repository-factory.js"></script>
+  <script src="js/core/service.js"></script>
+  <script src="js/core/ui-common.js"></script>
+  <script src="js/screens/screen-search-results.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

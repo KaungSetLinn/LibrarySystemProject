@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<!--
+  =============================================================================
+  ファイル名 : index.html
+  概要       : 図書予約システムのエントリポイント（ランディング）。
+               未ログインなら login.html、ログイン済みなら reservation-status.html
+               へリダイレクトする。HTML だけで判定が完結するよう、最低限の
+               スプラッシュ表示と簡易的な遷移ロジックを内包する。
+
+  仕様書トレーサビリティ:
+    - 外部仕様書 §3 画面一覧 / §4 画面遷移
+    - 外部仕様書 §10 UI 共通仕様（未認証ガード）
+    - 要求仕様書 RF-02 セッション管理 / RF-14 レスポンシブUI
+
+  設計メモ:
+    - app.js は本ファイルでは読み込まない（ここでは画面ディスパッチ不要）。
+    - sessionStorage の "lib-session" キーは Service.authenticate と完全一致させる。
+    - 自動遷移できない（JS無効など）場合に備えて手動リンクも提示する。
+  =============================================================================
+-->
+<head>
+  <meta charset="UTF-8" />
+  <!-- レスポンシブ対応（PC1280px〜iPhone SE3:375px） / RF-14 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- 古い IE が混入したケースの保険 -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <!-- セキュリティ：MIME スニッフィング抑止 -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
+  <title>図書予約システム</title>
+
+  <!-- 共通スタイル（後続フェーズで作成）。404 時もスプラッシュは下記 inline で確保。 -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- フォント未読時にも崩れない最小限の inline 装飾 -->
+  <style>
+    body { margin: 0; }
+    .splash {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; gap: 14px; padding: 24px; text-align: center;
+      font-family: "BIZ UDPGothic", "Hiragino Kaku Gothic ProN",
+                   "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
+      color: #15233f;
+      background: linear-gradient(180deg, #f8faff 0%, #eef3fb 60%, #dde8fa 100%);
+    }
+    .splash .ring {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 3px solid #d8e2f0; border-top-color: #1f55d8;
+      animation: lib-spin 0.8s linear infinite;
+    }
+    @keyframes lib-spin { to { transform: rotate(360deg); } }
+    .splash .title { font-size: 18px; font-weight: 700; }
+    .splash .hint  { color: #5a6a85; font-size: 14px; }
+    .splash a      { color: #1f55d8; text-decoration: none; font-weight: 700; }
+    .splash a:hover { text-decoration: underline; }
+    .splash noscript {
+      max-width: 480px;
+      padding: 12px 14px; border-radius: 10px;
+      background: #fdebea; color: #b8302f; border: 1.5px solid #e9b3b1;
+      font-size: 14px; line-height: 1.55;
+    }
+  </style>
+</head>
+<body data-page="index">
+  <!-- ページ全体のメイン領域。スプラッシュ表示。 -->
+  <main class="splash" role="status" aria-live="polite">
+    <div class="ring" aria-hidden="true"></div>
+    <div class="title">図書予約システムを準備しています…</div>
+    <div class="hint">
+      自動的に画面が切り替わらない場合は
+      <a href="login.html">ログイン画面へ進む</a>
+      をクリックしてください。
+    </div>
+
+    <!-- JavaScript が無効な環境向けの案内（要求仕様 §8 操作性 / 互換性） -->
+    <noscript>
+      JavaScript が無効になっています。<br />
+      本システムは JavaScript を有効にしてご利用ください。<br />
+      ページを再読込しても表示が変わらない場合はブラウザ設定をご確認ください。
+    </noscript>
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- 起動スクリプト                                                -->
+  <!-- index.html では、フル機能の app.js は不要。最低限の判定のみ行う。-->
+  <!-- セッションが既にあるなら G02 へ、なければ G01 へ遷移する。     -->
+  <!-- ============================================================ -->
+  <script>
+    (function () {
+      "use strict";
+      // セッションは sessionStorage の "lib-session" に格納されている。
+      // js/core/service.js の規約と完全に同一キーを参照する。
+      try {
+        var raw = sessionStorage.getItem("lib-session");
+        var session = raw ? JSON.parse(raw) : null;
+
+        // 既ログインなら G02 予約状況へ、未ログインなら G01 ログインへ。
+        var dest = (session && session.userId) ? "reservation-status.html" : "login.html";
+
+        // 履歴に index を残さないため replace を使う（戻るボタンで戻れないように）。
+        window.location.replace(dest);
+      } catch (_e) {
+        // セッションストレージが破損 / アクセス不可な場合も安全にログインへ。
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+</body>
+</html>

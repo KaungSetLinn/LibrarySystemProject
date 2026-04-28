@@ -1,86 +1,143 @@
 <!DOCTYPE html>
 <html lang="ja">
 <!--
+  =============================================================================
   ファイル名 : notification.html
-  概要       : 通知画面。直前の予約・取消処理の結果を表示する。
-  保守担当   : Y.Toyoda
--->
+  概要       : G05 通知画面。
+               直前操作の結果（予約成功・取消成功）と運用通知一覧を表示し、
+               既読化操作を提供する。
 
+  仕様書トレーサビリティ:
+    - 外部仕様書 G05 通知 / §4 画面遷移 / §10 メッセージ仕様
+    - 要求仕様書 RF-09 通知表示
+    - DB仕様書   §5.6 notifications
+    - テスト仕様 TC-NOT-01〜04
+
+  関連 JS: js/screens/screen-notification.js
+  =============================================================================
+-->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>図書予約システム 通知</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>通知 - 図書予約システム</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- 通知画面専用の補助スタイル（共通スタイルでカバーしない要素のみ） -->
+  <style>
+    /* 通知カード */
+    .notif-item {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      transition: opacity .2s, border-left-color .2s;
+    }
+    .notif-item.is-read { opacity: .65; border-left-color: var(--line-strong); }
+    .notif-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .notif-title { margin: 0; font-size: 16px; flex: 1 1 auto; }
+    .notif-body  { color: var(--text); line-height: 1.65; font-size: 14px; }
+    .notif-meta  {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .notif-flag {
+      font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      background: var(--surface-soft); color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    .notif-flag.is-unread {
+      background: var(--primary-soft); color: var(--primary);
+      border-color: #c5d3f3;
+    }
+  </style>
 </head>
 <body data-page="notification">
-  <!-- 画面全体の共通シェルを定義する。 -->
-  <div class="shell">
-    <!-- 上部ナビゲーションと利用者情報を表示する。 -->
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <div class="brand-mark">図</div>
-          <div class="brand-copy">
-            <strong>図書予約システム</strong>
-            <span>処理結果・通知</span>
-          </div>
-        </div>
-        <div class="header-side">
-          <span class="date-chip" data-today></span>
-          <span class="user-chip">利用者: <span data-user-name>---</span></span>
-          <a class="btn btn-light" href="login.html" data-logout-link>ログアウト</a>
+
+  <!-- ===== 共通ヘッダ ===== -->
+  <header class="app-header" role="banner">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">図</span>
+      <span>図書予約システム</span>
+    </div>
+    <nav aria-label="メインナビ">
+      <a href="reservation-status.html" data-nav="reservation-status">予約状況</a>
+      <a href="advanced-search.html"    data-nav="advanced-search">蔵書検索</a>
+      <a href="notification.html"       data-nav="notification">通知</a>
+      <a href="mypage.html"             data-nav="mypage">マイページ</a>
+    </nav>
+    <div class="user-area">
+      <span class="name" data-session-name>—</span>
+      <a href="#" class="btn btn-light btn-sm" data-logout>ログアウト</a>
+    </div>
+  </header>
+
+  <!-- ===== メイン ===== -->
+  <main class="container" role="main">
+    <div class="page-title">
+      <h1>通知</h1>
+      <span class="desc"><span data-notification-meta>—</span></span>
+    </div>
+
+    <!-- 共通メッセージ領域 -->
+    <div class="app-message-host" data-message-host></div>
+
+    <!-- ===== 直前操作の結果（あるときだけ表示） ===== -->
+    <section data-last-action style="display:none"></section>
+
+    <!-- ===== 通知一覧 ===== -->
+    <section class="card spacer-top" aria-labelledby="notifListTitle">
+      <div class="card-title">
+        <h2 id="notifListTitle">通知一覧</h2>
+        <div class="actions" style="margin: 0;">
+          <button type="button" class="btn btn-light btn-sm" data-mark-all-read>
+            すべて既読にする
+          </button>
         </div>
       </div>
-      <!-- 主要画面へ移動する共通ナビゲーションを表示する。 -->
-      <nav class="nav-tabs">
-        <a class="nav-tab" data-nav href="reservation-status.html">予約状況</a>
-        <a class="nav-tab" data-nav href="search-results.html">検索結果</a>
-        <a class="nav-tab" data-nav href="advanced-search.html">詳細検索</a>
-        <a class="nav-tab" data-nav href="mypage.html">マイページ</a>
-      </nav>
-    </header>
 
-    <!-- メインコンテンツ領域を定義する。 -->
-        <!-- 処理結果を確認するメイン領域を定義する。 -->
-    <main class="container">
-      <!-- 直前処理の結果通知ダイアログを表示する。 -->
-      <section class="dialog-shell">
-        <section class="card dialog-card">
-          <div class="card-body">
-            <div class="dialog-icon success" data-notification-icon>✓</div>
-            <h1 class="dialog-title" data-notification-title>処理結果</h1>
-            <p class="dialog-text" data-notification-message>直前の処理結果を表示します。</p>
+      <!-- 通知が並ぶ領域（screen-notification.js が描画） -->
+      <div data-notification-list></div>
 
-            <div class="summary-grid">
-              <div class="summary-box">
-                <strong>処理種別</strong>
-                <div class="muted" data-notification-action>---</div>
-              </div>
-              <div class="summary-box">
-                <strong>対象資料</strong>
-                <div class="muted" data-notification-book>---</div>
-              </div>
-              <div class="summary-box">
-                <strong>処理時刻</strong>
-                <div class="muted" data-notification-time>---</div>
-              </div>
-            </div>
+      <!-- 空状態 -->
+      <div class="empty-state" data-notification-empty style="display:none">
+        通知はまだありません。<br />
+        蔵書検索から予約すると、ここに結果が表示されます。
+      </div>
+    </section>
 
-            <div class="step-strip" data-notification-steps></div>
+    <!-- ===== 次の操作への導線（迷わなさ・操作回数の少なさ） ===== -->
+    <section class="card spacer-top">
+      <div class="card-title">
+        <h2>次に何をしますか？</h2>
+      </div>
+      <div class="actions">
+        <a href="reservation-status.html" class="btn btn-primary" data-go-status>📋 予約状況を確認する</a>
+        <a href="advanced-search.html"    class="btn btn-light"   data-go-search>🔍 続けて蔵書を検索する</a>
+        <a href="mypage.html"             class="btn btn-light">👤 マイページへ</a>
+      </div>
+    </section>
+  </main>
 
-            <div class="actions" style="justify-content:center; margin-top: 24px;">
-              <a class="btn btn-primary" href="reservation-status.html">予約状況を確認</a>
-              <a class="btn btn-secondary" href="search-results.html">検索結果へ戻る</a>
-              <a class="btn btn-light" href="mypage.html">マイページ</a>
-            </div>
-          </div>
-        </section>
-      </section>
-    </main>
-  </div>
-    <!-- 共通設定・初期データ・画面制御スクリプトを読み込む。 -->
-  <script src="library-config.js"></script>
-  <script src="library-seed.js"></script>
-  <script src="app.js"></script>
+  <button type="button" class="view-toggle" data-view-toggle>📱 スマホ表示でプレビュー</button>
+
+  <!-- スクリプト読込順（必ず守る） -->
+  <script src="js/library-config.js"></script>
+  <script src="js/library-seed.js"></script>
+  <script src="js/datasource/data-source.js"></script>
+  <script src="js/datasource/excel-adapter.js"></script>
+  <script src="js/datasource/sqlite-stub-adapter.js"></script>
+  <script src="js/core/config-manager.js"></script>
+  <script src="js/core/repository-factory.js"></script>
+  <script src="js/core/service.js"></script>
+  <script src="js/core/ui-common.js"></script>
+  <script src="js/screens/screen-notification.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
