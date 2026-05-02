@@ -202,3 +202,90 @@ exports.reserveBook = async (req, res) => {
         return res.status(500).json({ success: false, reservationId: null, message: '処理に失敗しました' });
     }
 };
+
+// =============================================================
+// cancelReservation
+// POST /api/users/:userId/reservations/:reservationId/cancel
+//
+// 本人確認後、予約ステータスを CANCELLED に更新します（仕様書 6-6）。
+// History / Notification / Audit は対応モデル追加後に実装予定。
+// =============================================================
+exports.cancelReservation = async (req, res) => {
+    const { userId, reservationId } = req.params;
+ 
+    // -------------------------------------------------
+    // 1. バリデーション（仕様書 6-6-3）
+    // -------------------------------------------------
+    if (!userId || String(userId).trim() === '') {
+        return res.status(400).json({ success: false, message: 'userId は必須です。' });
+    }
+    if (!reservationId || String(reservationId).trim() === '') {
+        return res.status(400).json({ success: false, message: 'reservationId は必須です。' });
+    }
+ 
+    const transaction = await sequelize.transaction();
+    try {
+        // -------------------------------------------------
+        // 2. 本人確認（仕様書 6-6-4）
+        //    reservationId AND userId の両方が一致するレコードを取得する。
+        //    0件であれば「対象の予約が見つかりません」。
+        // -------------------------------------------------
+        const reservation = await Reservation.findOne({
+            where: { reservationId, userId },
+            transaction,
+        });
+ 
+        if (!reservation) {
+            await transaction.rollback();
+            return res.json({ success: false, message: '対象の予約が見つかりません' });
+        }
+ 
+        // -------------------------------------------------
+        // 3. 既取消チェック（仕様書 6-6-7）
+        // -------------------------------------------------
+        if (reservation.status === 'CANCELLED') {
+            await transaction.rollback();
+            return res.json({ success: false, message: '既に取消済みです' });
+        }
+ 
+        // -------------------------------------------------
+        // 4. 予約ステータスを CANCELLED に更新（仕様書 6-6-4）
+        //    cancelledAt に現在日時を記録する（論理削除）。
+        // -------------------------------------------------
+        const now = new Date().toISOString();
+        await reservation.update(
+            { status: 'CANCELLED', cancelledAt: now },
+            { transaction }
+        );
+ 
+        // -------------------------------------------------
+        // TODO: History INSERT（仕様書 6-6-4 手順3）
+        //   History モデル追加後に実装する。
+        //   eventType = 'CANCEL'
+        // -------------------------------------------------
+ 
+        // -------------------------------------------------
+        // TODO: Notifications INSERT（仕様書 6-6-4 手順4）
+        //   Notification モデル追加後に実装する。
+        //   type = 'WARN', title = '予約取消'
+        // -------------------------------------------------
+ 
+        // -------------------------------------------------
+        // TODO: Audit INSERT（仕様書 6-6-4 手順5）
+        //   Audit モデル追加後に実装する。
+        //   level = 'INFO', eventType = 'CANCEL_SUCCESS'
+        // -------------------------------------------------
+ 
+        await transaction.commit();
+ 
+        return res.json({ success: true, message: '予約を取り消しました' });
+ 
+    } catch (err) {
+        // -------------------------------------------------
+        // 例外: ROLLBACK（仕様書 6-6-4）
+        // TODO: Audit に CANCEL_ERROR を記録（Audit モデル追加後に実装）
+        // -------------------------------------------------
+        try { await transaction.rollback(); } catch (_) {}
+        return res.status(500).json({ success: false, message: '処理に失敗しました' });
+    }
+};
