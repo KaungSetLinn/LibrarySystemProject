@@ -2504,13 +2504,13 @@ insert into loans (userId, bookId, loanDate, dueDate, returnDate) values (1, 124
 insert into loans (userId, bookId, loanDate, dueDate, returnDate) values (2, 102, '2026-04-05', '2026-04-19', NULL);
 insert into loans (userId, bookId, loanDate, dueDate, returnDate) values (3, 104, '2026-04-10', '2026-04-24', NULL);
 
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (1,  1241, 'RESERVED', '2026-04-01 09:00:00', '2026-04-08', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (2,  25, 'RESERVED', '2026-04-02 10:30:00', '2026-04-09', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (8,  35, 'RESERVED', '2026-04-05 11:45:00', '2026-04-12', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (10, 45, 'RESERVED', '2026-04-07 14:00:00', '2026-04-14', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (12, 55, 'RESERVED', '2026-04-09 15:15:00', '2026-04-16', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (14, 65, 'RESERVED', '2026-04-11 08:30:00', '2026-04-18', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (16, 75, 'RESERVED', '2026-04-14 09:00:00', '2026-04-21', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (17, 80, 'RESERVED', '2026-04-16 10:00:00', '2026-04-23', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (18, 85, 'RESERVED', '2026-04-18 13:30:00', '2026-04-25', NULL, NULL);
-insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (19, 90, 'RESERVED', '2026-04-20 16:00:00', '2026-04-27', NULL, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (1,  1241, 'RESERVED', '2026-04-01 09:00:00', '2026-04-08', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (2,  25, 'RESERVED', '2026-04-02 10:30:00', '2026-04-09', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (8,  35, 'RESERVED', '2026-04-05 11:45:00', '2026-04-12', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (10, 45, 'RESERVED', '2026-04-07 14:00:00', '2026-04-14', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (12, 55, 'RESERVED', '2026-04-09 15:15:00', '2026-04-16', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (14, 65, 'RESERVED', '2026-04-11 08:30:00', '2026-04-18', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (16, 75, 'RESERVED', '2026-04-14 09:00:00', '2026-04-21', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (17, 80, 'RESERVED', '2026-04-16 10:00:00', '2026-04-23', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (18, 85, 'RESERVED', '2026-04-18 13:30:00', '2026-04-25', 1, NULL);
+insert into reservations (userId, bookId, status, reservedAt, pickupDeadline, queueNo, cancelledAt) values (19, 90, 'RESERVED', '2026-04-20 16:00:00', '2026-04-27', 1, NULL);
