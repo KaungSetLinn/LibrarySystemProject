@@ -120,10 +120,10 @@ exports.reserveBook = async (req, res) => {
     // 1. バリデーション
     // -------------------------------------------------
     if (!userId || String(userId).trim() === '') {
-        return res.status(400).json({ success: false, reservationId: null, message: 'userId は必須です。' });
+        return res.status(400).json({ result: 'error', messageCode: 'E04', message: 'userId は必須です。', data: null });
     }
     if (!bookId || String(bookId).trim() === '') {
-        return res.status(400).json({ success: false, reservationId: null, message: 'bookId は必須です。' });
+        return res.status(400).json({ result: 'error', messageCode: 'E04', message: 'bookId は必須です。', data: null });
     }
 
     const transaction = await sequelize.transaction();
@@ -145,8 +145,7 @@ exports.reserveBook = async (req, res) => {
                 level: 'INFO', eventType: 'RESERVE_LIMIT',
                 userId, message: `予約上限超過 (bookId=${bookId})`,
             });
-            return res.json({ success: false, reservationId: null,
-                message: `予約可能件数の上限（${MAX_RESERVATIONS}冊）を超えています` });
+            return res.status(400).json({ result: 'error', messageCode: 'E02', message: `予約可能件数の上限（${MAX_RESERVATIONS}冊）を超えています`, data: null });
         }
 
         // -------------------------------------------------
@@ -163,7 +162,7 @@ exports.reserveBook = async (req, res) => {
                 level: 'INFO', eventType: 'RESERVE_DUPLICATE',
                 userId, message: `重複予約 (bookId=${bookId})`,
             });
-            return res.json({ success: false, reservationId: null, message: '同じ書籍を重複して予約できません' });
+            return res.status(400).json({ result: 'error', messageCode: 'E02', message: '同じ書籍を重複して予約できません', data: null });
         }
 
         // -------------------------------------------------
@@ -177,7 +176,7 @@ exports.reserveBook = async (req, res) => {
                 level: 'INFO', eventType: 'RESERVE_DISABLED',
                 userId, message: `予約不可書籍 (bookId=${bookId})`,
             });
-            return res.json({ success: false, reservationId: null, message: 'この書籍は予約できません' });
+            return res.status(400).json({ result: 'error', messageCode: 'E02', message: 'この書籍は予約できません', data: null });
         }
 
         // -------------------------------------------------
@@ -252,7 +251,12 @@ exports.reserveBook = async (req, res) => {
         await transaction.commit();
 
         const message = isOnLoan ? '予約を登録しました（順番待ち）' : '予約を登録しました';
-        return res.json({ success: true, reservationId: created.reservationId, message });
+        return res.status(200).json({
+            result:      'success',
+            messageCode: 'I01',
+            message,
+            data: { reservationId: created.reservationId, status },
+        });
 
     } catch (err) {
         // -------------------------------------------------
@@ -263,6 +267,6 @@ exports.reserveBook = async (req, res) => {
             level: 'ERROR', eventType: 'RESERVE_ERROR',
             userId, message: err.message,
         });
-        return res.status(500).json({ success: false, reservationId: null, message: '処理に失敗しました' });
+        return res.status(500).json({ result: 'error', messageCode: 'E10', message: '処理に失敗しました', data: null });
     }
 };
