@@ -38,6 +38,15 @@ CREATE TABLE reservations (
     FOREIGN KEY(bookId) REFERENCES books(bookId)
 );
 
+CREATE TABLE favorites (
+    favoriteId INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER,
+    bookId INTEGER,
+    addedAt TEXT DEFAULT (DATE('now')),
+    FOREIGN KEY (userId) REFERENCES users(userId),
+    FOREIGN KEY (bookId) REFERENCES books(bookId),
+);
+
 insert into users values( '1', '佐藤翔太' );
 insert into users values( '2',  '鈴木蓮' );
 insert into users values( '3',  '高橋翔' );

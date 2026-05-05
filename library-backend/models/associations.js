@@ -5,6 +5,7 @@ const User = require('./User');
 const History = require('./History');
 const Notification = require('./Notification');
 const Audit = require('./Audit');
+const Favorite = require('./Favorite');
 
 // Book ↔ Reservation (1:1)
 Book.hasOne(Reservation, {
@@ -80,4 +81,22 @@ User.hasMany(Audit, {
  
 Audit.belongsTo(User, {
     foreignKey: 'userId'
+});
+
+// User ↔ Favorite (1:N)
+User.hasMany(Favorite, {
+    foreignKey: 'userId'
+});
+
+Favorite.belongsTo(User, {
+    foreignKey: 'userId'
+});
+
+// Book ↔ Favorite (1:N)
+Book.hasMany(Favorite, {
+    foreignKey: 'bookId'
+});
+
+Favorite.belongsTo(Book, {
+    foreignKey: 'bookId'
 });
