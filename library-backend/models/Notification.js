@@ -28,10 +28,6 @@ const Notification = sequelize.define('Notification', {
         type: DataTypes.TEXT,
         allowNull: true
     },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: true
-    },
     isRead: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -39,7 +35,8 @@ const Notification = sequelize.define('Notification', {
     }
 }, {
     tableName: 'notifications',
-    timestamps: false,
+    timestamps: true,
+    updatedAt: false,     // createdAt のみ Sequelize が自動管理、updatedAt は不要
     underscored: false
 });
 

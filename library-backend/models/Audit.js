@@ -27,14 +27,11 @@ const Audit = sequelize.define('Audit', {
     message: {
         type: DataTypes.TEXT,
         allowNull: true
-    },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: true
     }
 }, {
     tableName: 'audit',
-    timestamps: false,
+    timestamps: true,
+    updatedAt: false,     // createdAt のみ Sequelize が自動管理、updatedAt は不要
     underscored: false
 });
 

@@ -1,8 +1,11 @@
-const { Op, literal, fn, col } = require('sequelize');
+const { Op, literal } = require('sequelize');
 const sequelize = require('../db/connection');
 const Book = require('../models/Book');
 const Reservation = require('../models/Reservation');
 const Loan = require('../models/Loan');
+const History = require('../models/History');
+const Notification = require('../models/Notification');
+const Audit = require('../models/Audit');
 
 /**
  * GET /api/users/:userId/reservations/active
@@ -62,7 +65,6 @@ exports.getActiveReservations = async (req, res) => {
             pickupDeadline: r.pickupDeadline,
             queueNo:        r.queueNo,
             cancelledAt:    r.cancelledAt,
-            
         }));
 
         return res.json({
@@ -71,7 +73,6 @@ exports.getActiveReservations = async (req, res) => {
         });
 
     } catch (err) {
-        // DB例外
         return res.status(500).json({ error: err.message });
     }
 };
@@ -86,12 +87,22 @@ function _calcPickupDeadline() {
 }
 
 // =============================================================
-// [FIX 3] _nextReservationId を削除
-//   Reservation.reservationId は INTEGER / autoIncrement であるため、
-//   文字列 "R-XXXXX" 形式の採番は型不一致を引き起こす。
-//   INSERT 時は reservationId を指定せず DB の autoIncrement に委ねる。
+// 補助関数: audit ログ書き込み（仕様書 8.3）
+// トランザクション外で呼ぶため transaction は渡さない。
 // =============================================================
- 
+async function _writeAuditLog({ level, eventType, userId, message }) {
+    try {
+        await Audit.create({
+            level,
+            eventType,
+            userId: userId ?? null,
+            message,
+        });
+    } catch (_) {
+        // audit 書き込み失敗はサイレントに無視（本処理を止めない）
+    }
+}
+
 // =============================================================
 // reserveBook
 // POST /api/users/:userId/reservations
@@ -99,27 +110,27 @@ function _calcPickupDeadline() {
 //
 // 予約上限・重複・書籍状態チェックを行い、予約レコードを
 // トランザクション内で登録します（仕様書 6-5）。
-// History / Notification / Audit は対応モデル追加後に実装予定。
+// History / Notification / Audit は仕様書 6-5-5 に従い実装。
 // =============================================================
 exports.reserveBook = async (req, res) => {
     const { userId } = req.params;
     const { bookId }  = req.body;
- 
+
     // -------------------------------------------------
     // 1. バリデーション
     // -------------------------------------------------
     if (!userId || String(userId).trim() === '') {
-        return res.status(400).json({ success: false, reservationId: null, message: 'userId は必須です。' });
+        return res.status(400).json({ result: 'error', messageCode: 'E04', message: 'userId は必須です。', data: null });
     }
     if (!bookId || String(bookId).trim() === '') {
-        return res.status(400).json({ success: false, reservationId: null, message: 'bookId は必須です。' });
+        return res.status(400).json({ result: 'error', messageCode: 'E04', message: 'bookId は必須です。', data: null });
     }
- 
+
     const transaction = await sequelize.transaction();
     try {
         const now = new Date().toISOString();
-        const MAX_RESERVATIONS = 3; // ConfigManager.get("maxReservations") 相当
- 
+        const MAX_RESERVATIONS = 3;
+
         // -------------------------------------------------
         // 2. 予約上限チェック（仕様書 6-5-4）
         // -------------------------------------------------
@@ -129,10 +140,14 @@ exports.reserveBook = async (req, res) => {
         });
         if (activeCount >= MAX_RESERVATIONS) {
             await transaction.rollback();
-            return res.json({ success: false, reservationId: null,
-                message: `予約可能件数の上限（${MAX_RESERVATIONS}冊）を超えています` });
+            // 仕様書 6-5-7: INFO / RESERVE_LIMIT
+            await _writeAuditLog({
+                level: 'INFO', eventType: 'RESERVE_LIMIT',
+                userId, message: `予約上限超過 (bookId=${bookId})`,
+            });
+            return res.status(400).json({ result: 'error', messageCode: 'E02', message: `予約可能件数の上限（${MAX_RESERVATIONS}冊）を超えています`, data: null });
         }
- 
+
         // -------------------------------------------------
         // 3. 重複チェック（仕様書 6-5-4）
         // -------------------------------------------------
@@ -142,41 +157,43 @@ exports.reserveBook = async (req, res) => {
         });
         if (duplicate) {
             await transaction.rollback();
-            return res.json({ success: false, reservationId: null, message: '同じ書籍を重複して予約できません' });
+            // 仕様書 6-5-7: INFO / RESERVE_DUPLICATE
+            await _writeAuditLog({
+                level: 'INFO', eventType: 'RESERVE_DUPLICATE',
+                userId, message: `重複予約 (bookId=${bookId})`,
+            });
+            return res.status(400).json({ result: 'error', messageCode: 'E02', message: '同じ書籍を重複して予約できません', data: null });
         }
- 
+
         // -------------------------------------------------
         // 4. 書籍状態判定（仕様書 6-5-4 / 6-4-8）
         // -------------------------------------------------
         const book = await Book.findOne({ where: { bookId }, transaction });
         if (!book || book.isDisabled || !book.canReserve) {
             await transaction.rollback();
-            return res.json({ success: false, reservationId: null, message: 'この書籍は予約できません' });
+            // 仕様書 6-5-7: INFO / RESERVE_DISABLED
+            await _writeAuditLog({
+                level: 'INFO', eventType: 'RESERVE_DISABLED',
+                userId, message: `予約不可書籍 (bookId=${bookId})`,
+            });
+            return res.status(400).json({ result: 'error', messageCode: 'E02', message: 'この書籍は予約できません', data: null });
         }
- 
+
         // -------------------------------------------------
-        // [FIX 2] 貸出中判定
-        //   Loan モデルに "status" フィールドは存在しない。
-        //   returnDate が NULL であるレコードが貸出中を意味する。
+        // 貸出中判定: returnDate が NULL のレコードが貸出中
         // -------------------------------------------------
         const activeLoan = await Loan.findOne({
-            where: {
-                bookId,
-                returnDate: { [Op.is]: null },
-            },
+            where: { bookId, returnDate: { [Op.is]: null } },
             transaction,
         });
         const isOnLoan = !!activeLoan;
- 
-        // 状態判定: 貸出中 → WAITING、それ以外 → RESERVED
+
         const status = isOnLoan ? 'WAITING' : 'RESERVED';
         const pickup = isOnLoan ? null : _calcPickupDeadline();
- 
+
         // -------------------------------------------------
-        // [FIX 3] reservationId の明示指定を廃止
-        //   Reservation.reservationId は INTEGER / autoIncrement。
-        //   文字列 "R-XXXXX" を渡すと型不一致になるため、
-        //   DB の autoIncrement に採番を委ねる（フィールド自体を渡さない）。
+        // 5. 予約登録（仕様書 6-5-5 step 6）
+        //    reservationId は autoIncrement に委ねる
         // -------------------------------------------------
         const created = await Reservation.create({
             userId,
@@ -187,18 +204,69 @@ exports.reserveBook = async (req, res) => {
             queueNo:        1,
             cancelledAt:    null,
         }, { transaction });
- 
+
+        // -------------------------------------------------
+        // 6. 履歴登録（仕様書 6-5-5 step 7）
+        //    eventType='RESERVE', detail に書籍名・状態を記録
+        // -------------------------------------------------
+        const detail = isOnLoan
+            ? `bookId=${bookId} title=${book.title} status=WAITING`
+            : `bookId=${bookId} title=${book.title} pickupDeadline=${pickup}`;
+
+        await History.create({
+            userId,
+            bookId,
+            eventType: 'RESERVE',
+            eventAt:   now,
+            detail,
+        }, { transaction });
+
+        // -------------------------------------------------
+        // 7. 通知登録（仕様書 6-5-5 step 8）
+        //    type='SUCCESS', title='予約完了'
+        // -------------------------------------------------
+        const notiMessage = isOnLoan
+            ? `「${book.title}」を予約しました（現在貸出中のため順番待ちです）。`
+            : `「${book.title}」を予約しました。受取期限は ${pickup} です。`;
+
+        await Notification.create({
+            userId,
+            type:       'SUCCESS',
+            title:      '予約完了',
+            message:    notiMessage,
+            isRead:     false,
+        }, { transaction });
+
+        // -------------------------------------------------
+        // 8. 監査ログ（仕様書 6-5-5 step 9）
+        //    トランザクション内で commit 前に作成
+        // -------------------------------------------------
+        await Audit.create({
+            level:     'INFO',
+            eventType: 'RESERVE_SUCCESS',
+            userId,
+            message:   `bookId=${bookId} の予約を登録 (reservationId=${created.reservationId})`,
+        }, { transaction });
+
         await transaction.commit();
- 
+
         const message = isOnLoan ? '予約を登録しました（順番待ち）' : '予約を登録しました';
-        // autoIncrement で採番された ID を返す
-        return res.json({ success: true, reservationId: created.reservationId, message });
- 
+        return res.status(200).json({
+            result:      'success',
+            messageCode: 'I01',
+            message,
+            data: { reservationId: created.reservationId, status },
+        });
+
     } catch (err) {
         // -------------------------------------------------
-        // 例外: ROLLBACK（仕様書 6-5-4）
+        // 例外: ROLLBACK → audit に RESERVE_ERROR を記録（仕様書 6-5-7）
         // -------------------------------------------------
         try { await transaction.rollback(); } catch (_) {}
-        return res.status(500).json({ success: false, reservationId: null, message: '処理に失敗しました' });
+        await _writeAuditLog({
+            level: 'ERROR', eventType: 'RESERVE_ERROR',
+            userId, message: err.message,
+        });
+        return res.status(500).json({ result: 'error', messageCode: 'E10', message: '処理に失敗しました', data: null });
     }
 };
