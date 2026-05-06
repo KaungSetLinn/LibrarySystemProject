@@ -5,6 +5,7 @@ const path = require('path');
 const { requireLogin } = require('./middleware/auth');
 
 const session = require('express-session');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
 const sequelize = require('./db/connection');
 
@@ -25,11 +26,20 @@ app.use(cors({
 
 app.use(express.json());
 
+const sessionStore = new SequelizeStore({
+    db: sequelize,
+    checkExpirationInterval: 15 * 60 * 1000, // Clean up expired sessions every 15 minutes
+    expiration: 1000 * 60 * 60,              // 1 hour
+});
+
 app.use(session({
     secret: 'library-secret-key',
     resave: false,
     saveUninitialized: false,
+    rolling: true,  // Resets expiration on every request (active users stay logged in)
+    store: sessionStore,
     cookie: {
+        maxAge: 1000 * 60 * 60, // 1 hour in milliseconds
         secure: false // true only in HTTPS
     }
 }));
@@ -57,12 +67,18 @@ sequelize.authenticate()
     .then(() => {
         console.log('✅ Database connected');
 
+        // Sync session table then start server
+        return sessionStore.sync();
+    })
+    .then(() => {
+        console.log('✅ Session store synced');
+
         app.listen(3000, () => {
             console.log('Server running on port 3000');
         });
     })
     .catch(err => {
-        console.error('❌ DB connection error:', err);
+        console.error('❌ Startup error:', err);
     });
 
 

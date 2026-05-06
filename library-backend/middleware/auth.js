@@ -3,7 +3,7 @@ exports.requireLogin = (req, res, next) => {
 
         // If API request → return JSON
         if (req.originalUrl.startsWith('/api')) {
-            return res.status(401).json({ message: "Not logged in" });
+            return res.status(401).json({ "messageCode": "E09", "message": "セッションが切れました。再度ログインしてください。" });
         }
 
         // If page request → redirect
