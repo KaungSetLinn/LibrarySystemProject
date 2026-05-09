@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const reservationController = require('../controllers/reservationController');
+const mypageController = require('../controllers/mypageController');
 const { requireLogin } = require('../middleware/auth');
 
 // METHOD: POST
@@ -50,5 +51,20 @@ router.get('/:userId/reservations/active', requireLogin, reservationController.g
  *   500     - DB例外発生時
  */
 router.post('/:userId/reservations', requireLogin, reservationController.reserveBook);
+
+/*
+ * GET /api/users/:userId/mypage
+ *
+ * 指定利用者のマイページ集約データを取得します。
+ *
+ * パスパラメータ:
+ *   userId  - 利用者ID（例: /api/users/1/mypage）
+ *
+ * レスポンス:
+ *   200 OK  - { currentReservations, history, favorites, notifications }
+ *   403     - 他利用者のデータへのアクセス（E02）
+ *   500     - DB例外発生時（E10）
+ */
+router.get('/:userId/mypage', requireLogin, mypageController.getMyPage);
 
 module.exports = router;
