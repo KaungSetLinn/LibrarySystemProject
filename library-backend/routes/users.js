@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const reservationController = require('../controllers/reservationController');
+const dashboardController = require('../controllers/dashboardController');
 const { requireLogin } = require('../middleware/auth');
 
 // METHOD: POST
@@ -50,5 +51,23 @@ router.get('/:userId/reservations/active', requireLogin, reservationController.g
  *   500     - DB例外発生時
  */
 router.post('/:userId/reservations', requireLogin, reservationController.reserveBook);
+
+/*
+ * GET /api/users/:userId/dashboard
+ *
+ * 指定利用者のダッシュボード集約データを取得します。（G02 対応）
+ *
+ * パスパラメータ:
+ *   userId  - 利用者ID（例: /api/users/1/dashboard）
+ *
+ * レスポンス:
+ *   200 OK  - { result, messageCode, message, data: {
+ *               reservations, reservationCount,
+ *               remainingQuota, unreadCount, notifications } }
+ *   401     - セッション切れ（requireLogin ミドルウェアが処理、E09）
+ *   403     - 他利用者の userId へのアクセス（E02）
+ *   500     - DB例外発生時（E10）
+ */
+router.get('/:userId/dashboard', requireLogin, dashboardController.getDashboard);
 
 module.exports = router;
