@@ -305,7 +305,7 @@ exports.cancelReservation = async (req, res) => {
 
         if (!reservation) {
             await transaction.rollback();
-            return res.json({ success: false, message: '対象の予約が見つかりません' });
+            return res.status(404).json({ messageCode: 'E10', message: '対象の予約が見つかりません。' });
         }
 
         // -------------------------------------------------
@@ -363,7 +363,7 @@ exports.cancelReservation = async (req, res) => {
 
         await transaction.commit();
 
-        return res.json({ success: true, message: '予約を取り消しました' });
+        return res.status(200).json({ messageCode: 'I02', message: '予約を取消しました。' });
 
     } catch (err) {
         // -------------------------------------------------
