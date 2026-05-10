@@ -53,12 +53,12 @@ router.get('/:userId/reservations/active', requireLogin, reservationController.g
  */
 router.post('/:userId/reservations', requireLogin, reservationController.reserveBook);
 /*
- * POST /api/users/:userId/reservations/:reservationId/cancel
+ * DELETE /api/users/:userId/reservations/:reservationId
  *
  * 指定利用者の予約を取り消します。
  *
  * パスパラメータ:
- *   userId        - 利用者ID（例: /api/users/1/reservations/3/cancel）
+ *   userId        - 利用者ID（例: /api/users/1/reservations/3）
  *   reservationId - 予約ID
  *
  * レスポンス:
@@ -66,7 +66,7 @@ router.post('/:userId/reservations', requireLogin, reservationController.reserve
  *   400     - userId / reservationId が空文字の場合
  *   500     - DB例外発生時
  */
-router.post('/:userId/reservations/:reservationId/cancel', requireLogin, reservationController.cancelReservation);
+router.delete('/:userId/reservations/:reservationId', requireLogin, reservationController.cancelReservation);
 
 /*
  * GET /api/users/:userId/dashboard
