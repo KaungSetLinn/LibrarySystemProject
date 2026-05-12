@@ -72,12 +72,8 @@ exports.searchBooks = async (req, res) => {
             return res.status(400).json({
                 result: 'error',
                 messageCode: 'E04',
-                message: '検索条件を 1 つ以上入力してください。',
-                count: 0,
-                page: Number(page),
-                pageSize: 10,
-                totalPages: 1,
-                books: [],
+                message: '検索条件を1つ以上入力してください。',
+                data: null,
             });
         }
 
@@ -88,6 +84,18 @@ exports.searchBooks = async (req, res) => {
         // 1-b. ログイン中ユーザーID取得
         // =========================
         const currentUserId = req.session?.user?.userId ?? null;
+
+        // =========================
+        // 1-c. セッション切れチェック（仕様書 §7.2.3 E09）
+        // =========================
+        if (currentUserId === null) {
+            return res.status(401).json({
+                result: 'error',
+                messageCode: 'E09',
+                message: '再度ログインしてください。',
+                data: null,
+            });
+        }
 
         // =========================
         // 2. WHERE 句を動的に組み立て（仕様書 6-4-5）
@@ -168,7 +176,7 @@ exports.searchBooks = async (req, res) => {
                 _determineBookActionState(book, loanMap, reservationMap, currentUserId);
 
             return {
-                bookId: String(book.bookId),   // ① DB は TEXT 型 → 文字列で統一
+                bookId: Number(book.bookId),   // ① 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
                 title: book.title,
                 author: book.author,
                 category: book.category,
@@ -181,21 +189,30 @@ exports.searchBooks = async (req, res) => {
         });
 
         // =========================
-        // 7. レスポンス返却
+        // 7. レスポンス返却（仕様書 §7.2.1 — 4層構造）
         // =========================
         const totalPages = Math.ceil(result.count / pageSize);
 
         return res.json({
             result: 'success',
-            count: result.count,
-            page: Number(page),
-            pageSize,
-            totalPages,
-            books,
+            messageCode: 'I00',
+            message: 'OK',
+            data: {
+                count: result.count,
+                page: Number(page),
+                pageSize,
+                totalPages,
+                books,
+            },
         });
 
     } catch (err) {
-        // DB例外（仕様書 6-4-7）
-        return res.status(500).json({ result: 'error', error: err.message });
+        // DB例外（仕様書 §7.2.3 E10）
+        return res.status(500).json({
+            result: 'error',
+            messageCode: 'E10',
+            message: 'システムエラーが発生しました。',
+            data: null,
+        });
     }
 };
