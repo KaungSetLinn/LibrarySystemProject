@@ -12,8 +12,13 @@ const sequelize = require('./db/connection');
 // IMPORT ASSOCIATION
 require('./models/associations');
 
+const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const bookRoutes = require('./routes/books');
+const reservationRoutes = require('./routes/reservations');
+// const adminRoutes = require('./routes/admin');
+// const loanRoutes = require('./routes/loans');
+// const healthRoutes = require('./routes/health');
 
 const app = express();
 
@@ -46,16 +51,21 @@ app.use(session({
 
 app.use(express.static(frontendPath));
 
-// Global auth — only login is public
+// Global auth — /api/v1/auth/* and /api/v1/health are public
 app.use((req, res, next) => {
-    if (req.path === '/api/users/login') return next();
+    if (req.path.startsWith('/api/v1/auth/')) return next();
+    if (req.path === '/api/v1/health') return next();
     return requireLogin(req, res, next);
 });
 
-// API routes
-app.use('/api/users', userRoutes);
-
-app.use('/api/books', bookRoutes);
+// API routes (§8.3 API-01〜API-14, all paths under /api/v1/)
+app.use('/api/v1/auth', authRoutes);                // API-01 POST /login, API-02 POST /logout
+app.use('/api/v1/users', userRoutes);               // API-03/03b/06/07/11/12/13/14
+app.use('/api/v1/books', bookRoutes);               // API-04 GET /search, API-04b GET /:bookId
+app.use('/api/v1/reservations', reservationRoutes); // API-05 POST /
+// app.use('/api/v1/admin/bridge', adminRoutes);       // API-08a/08b/08c
+// app.use('/api/v1/loans', loanRoutes);               // API-09 POST /events
+// app.use('/api/v1/health', healthRoutes);            // API-10 GET /
 
 // PROTECTED ROUTE
 app.get('/', (req, res) => {
@@ -80,9 +90,3 @@ sequelize.authenticate()
     .catch(err => {
         console.error('❌ Startup error:', err);
     });
-
-
-/* const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-}); */
