@@ -1,0 +1,17 @@
+{
+  "development": {
+    "dialect": "sqlite",
+    "storage": "./libraryT.db",
+    "dialectOptions": {
+      "foreign_keys": true
+    }
+  },
+  "test": {
+    "dialect": "sqlite",
+    "storage": "./libraryT-test.db"
+  },
+  "production": {
+    "dialect": "sqlite",
+    "storage": "./libraryT.db"
+  }
+}
