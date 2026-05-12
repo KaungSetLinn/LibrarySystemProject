@@ -1,0 +1,6 @@
+dbType=Excel
+maxReservations=3
+searchPageSize=10
+pickupDeadlineDays=7
+sessionTimeoutMinutes=30
+logLevel=info
