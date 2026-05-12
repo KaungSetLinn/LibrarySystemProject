@@ -1,0 +1,382 @@
+/* =============================================================================
+ * ファイル名 : app/css/v3.0.4-mobile.css
+ * 概要       : v3.0.4 スマホ表示乱れ一括修正。
+ *              基準端末: iPhone SE 第3世代（375×667） / Android 一般（360×800）
+ *              既存 style.css / v3-additions.css の上から重ね当てで微調整する。
+ *
+ * 修正対象:
+ *   1) ヘッダナビ（ロゴ・ナビゲーション・ユーザー名の重なり / 折り返し）
+ *   2) ログイン画面（二段レイアウト崩れ・サイドパネル非表示時の余白）
+ *   3) 予約状況画面（テーブル横スクロール・ボタン重なり）
+ *   4) 検索結果画面（ページャー・テーブルレイアウト）
+ *   5) マイページ（タブ切替・JSONボタン）
+ *   6) 全画面共通（フォーム・ボタン・タッチ領域 44×44 確保）
+ *
+ * 仕様書トレーサビリティ:
+ *   - 外部仕様書 v4.0  §10.4 レスポンシブ対応 / §10.1 ヘッダ・フッタ
+ *   - 要求仕様書 v4.0  RF-14 レスポンシブUI
+ *
+ * 改訂履歴:
+ *   v3.0.4  2026-05-05  Y.Toyoda  新規作成（スマホ表示乱れ一括修正）
+ *
+ * @author  Y.Toyoda
+ * @version v3.0.4
+ * ============================================================================= */
+
+/* =============================================================================
+ * セクション 1: 全画面共通の基盤調整（≤ 768px）
+ * ============================================================================= */
+@media (max-width: 768px) {
+
+  /* (1) box-sizing 強制統一 / 横スクロール禁止（仕様書 §10.4） */
+  html, body { overflow-x: hidden; }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  /* (2) コンテナ余白を最小化 */
+  .container { padding-left: 10px; padding-right: 10px; max-width: 100%; }
+
+  /* (3) タッチ領域の確保（WCAG 2.1 AA：最低 44×44） */
+  .btn, button, .app-header nav a, .bottom-nav a, .table .btn-cancel,
+  input[type="submit"], input[type="button"] {
+    min-height: 44px;
+  }
+  .btn { padding: 10px 14px; }
+
+  /* (4) フォント縮小 */
+  body { font-size: 14px; line-height: 1.55; }
+  h1 { font-size: 22px !important; line-height: 1.35; }
+  h2 { font-size: 18px !important; }
+  h3 { font-size: 16px !important; }
+
+  /* (5) 入力欄は親幅に収まるよう統一 */
+  input[type="text"], input[type="password"], input[type="search"],
+  input[type="email"], input[type="number"], select, textarea {
+    width: 100%;
+    max-width: 100%;
+    font-size: 16px;  /* iOS Safari の自動ズーム防止（16px 未満で発動） */
+    min-height: 44px;
+  }
+
+  /* (6) ボタンは折り返し可、間隔を確保 */
+  .btn-row, .button-row, .actions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .btn-row .btn, .button-row .btn, .actions .btn {
+    flex: 1 1 auto; min-width: 0;
+  }
+}
+
+/* =============================================================================
+ * セクション 2: ヘッダナビ（ロゴ・ナビ・ユーザー名の重なり修正）
+ * ============================================================================= */
+@media (max-width: 768px) {
+  /* ヘッダ全体：高さ・余白を再調整、折り返さない */
+  .app-header {
+    height: auto !important;
+    min-height: 56px;
+    padding: 6px 10px !important;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  /* ロゴ＋システム名は省略可 */
+  .app-header .brand {
+    font-size: 14px;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .app-header .brand .logo {
+    width: 28px; height: 28px;
+    flex-shrink: 0;
+  }
+  .app-header .brand > span:not(.logo) {
+    display: none;     /* スマホではテキスト「図書予約システム」を非表示にしてロゴのみ */
+  }
+  /* ナビゲーション本体は bottom-nav に置き換え（既存方針）→ ヘッダの nav は確実に隠す */
+  .app-header nav { display: none !important; }
+
+  /* ユーザー名 + ログアウトボタン領域 */
+  .app-header .user-area {
+    gap: 6px;
+    font-size: 12px;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .app-header .user-area .name {
+    max-width: 8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app-header .user-area .btn-link {
+    padding: 8px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  /* PC用「強制スマホプレビュー切替」ボタンはスマホでは隠す */
+  .app-header [data-view-toggle] { display: none; }
+}
+
+/* =============================================================================
+ * セクション 3: ログイン画面（二段レイアウト崩れ修正）
+ * ============================================================================= */
+@media (max-width: 768px) {
+  .login-grid {
+    grid-template-columns: 1fr !important;
+    min-height: 0 !important;
+  }
+  /* サイドパネル非表示は v3-additions.css と整合 */
+  .login-side { display: none !important; }
+  /* フォーム側の余白縮小・最大幅 */
+  .login-form,
+  .login-form-inner {
+    padding: 18px !important;
+    max-width: 100% !important;
+  }
+  .login-form h1 { margin-top: 4px; }
+  .login-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    word-break: break-word;
+  }
+  /* ログインヒント・補助情報 */
+  .login-note { font-size: 12px; padding: 10px 12px; }
+  .login-note ul { margin-left: 16px; }
+  /* 「クリア」「ログイン」ボタンは横並び固定 */
+  .login-form .btn-row { flex-wrap: nowrap; }
+  .login-form .btn-row .btn {
+    flex: 1 1 50%;
+    min-width: 0;
+    font-size: 14px;
+  }
+}
+
+/* =============================================================================
+ * セクション 4: 予約状況画面（テーブル横スクロール・ボタン重なり）
+ * ============================================================================= */
+@media (max-width: 768px) {
+  /* スマホではテーブルをカード化（既存仕様）。data-label 必須。 */
+  .table thead { display: none !important; }
+  .table, .table tbody, .table tr { display: block; width: 100%; }
+  .table tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .table tbody td {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    column-gap: 10px;
+    padding: 6px 0;
+    border: 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 13px;
+    word-break: break-word;
+  }
+  .table tbody td:last-child { border-bottom: 0; }
+  .table tbody td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 11px;
+    align-self: center;
+    font-weight: 600;
+  }
+  /* 取消ボタンは行末で全幅、48px 高 */
+  .table tbody td.col-action {
+    grid-template-columns: 1fr;
+    padding-top: 10px;
+  }
+  .table tbody td.col-action::before { display: none; }
+  .table tbody td.col-action .btn,
+  .table tbody td.col-action .btn-cancel {
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+  }
+  /* 残予約枠サマリ（数字パネル） */
+  .summary { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+  .summary-card { padding: 10px; }
+  .summary-label { font-size: 11px; }
+  .summary-value { font-size: 22px !important; }
+}
+
+/* =============================================================================
+ * セクション 5: 検索結果画面（ページャー・テーブルレイアウト）
+ * ============================================================================= */
+@media (max-width: 768px) {
+  /* ページャー：折り返し + 中央寄せ */
+  .pager, .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 12px 0;
+  }
+  .pager .btn, .pager a, .pager button,
+  .pagination .btn, .pagination a, .pagination button {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+  .pager .page-info, .pagination .page-info {
+    flex: 1 1 100%;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  /* 検索結果のステータスバッジ・予約ボタンは行内で調整 */
+  .badge, .badge-available, .badge-onloan, .badge-reserved, .badge-disabled {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+  /* 結果件数表示 */
+  .result-count, .search-summary {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+  /* 検索条件変更リンク */
+  .search-criteria-edit {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 13px;
+  }
+}
+
+/* =============================================================================
+ * セクション 6: マイページ（タブ切替・JSON ボタン）
+ * ============================================================================= */
+@media (max-width: 768px) {
+  /* タブバー：スクロール可、アクティブ強調 */
+  .tabs, .tab-list, [role="tablist"] {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0;
+    margin-bottom: 12px;
+    /* スクロールバーを薄く */
+    scrollbar-width: thin;
+  }
+  .tabs::-webkit-scrollbar { height: 4px; }
+  .tabs::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+  .tabs .tab, .tabs button, [role="tab"] {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    font-size: 13px;
+    white-space: nowrap;
+    min-height: 44px;
+    border-radius: 8px 8px 0 0;
+  }
+  .tabs .tab.is-active, [role="tab"][aria-selected="true"] {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  /* JSON 入出力ボタン群（管理者用） */
+  .data-mgmt-actions, .json-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .data-mgmt-actions .btn, .json-actions .btn {
+    width: 100%;
+    min-height: 48px;
+    text-align: center;
+  }
+  /* 危険操作（reset 等）は赤強調を維持しつつ全幅 */
+  .btn-danger, .data-mgmt-reset {
+    width: 100%;
+    background: #b43f3f;
+    color: #fff;
+  }
+}
+
+/* =============================================================================
+ * セクション 7: 360px Android 端末向け追加微調整
+ * ============================================================================= */
+@media (max-width: 380px) {
+  /* よりコンパクトに */
+  body { font-size: 13px; }
+  .container { padding-left: 8px; padding-right: 8px; }
+  .app-header { min-height: 52px; padding: 4px 8px !important; }
+  .app-header .brand .logo { width: 26px; height: 26px; font-size: 13px; }
+  .app-header .user-area .name { max-width: 6em; }
+  .app-header .user-area .btn-link { padding: 6px 8px; font-size: 11px; }
+  .summary-value { font-size: 20px !important; }
+  .table tbody td { grid-template-columns: 80px 1fr; font-size: 12px; }
+  .table tbody td::before { font-size: 10px; }
+  .login-form, .login-form-inner { padding: 14px !important; }
+  .tabs .tab, [role="tab"] { padding: 8px 10px; font-size: 12px; }
+}
+
+/* =============================================================================
+ * セクション 8: スタブモードバッジ（既存）位置調整
+ * ============================================================================= */
+@media (max-width: 768px) {
+  .stub-mode-badge {
+    bottom: 70px !important;   /* bottom-nav と被らない位置に */
+    right: 10px !important;
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+}
+
+/* =============================================================================
+ * セクション 9: bottom-nav の最終調整（既存ナビをスマホで表示）
+ * ============================================================================= */
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    z-index: 49;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+  }
+  .bottom-nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: var(--muted);
+    font-size: 11px;
+    text-decoration: none;
+  }
+  .bottom-nav a .bn-i { font-size: 22px; line-height: 1; }
+  .bottom-nav a.is-active {
+    color: var(--primary);
+    font-weight: 600;
+  }
+  /* ボディ下部にナビ分の余白 */
+  body { padding-bottom: 76px !important; }
+}
+
+/* =============================================================================
+ * セクション 10: noscript 警告 / トースト通知
+ * ============================================================================= */
+@media (max-width: 768px) {
+  .noscript-warning { font-size: 12px; padding: 12px; }
+  .lib-toast {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 76px !important;     /* bottom-nav 上 */
+    font-size: 13px;
+    padding: 12px 14px;
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "library-reservation-system-integrated",
+  "version": "1.0.0",
+  "description": "図書予約システム統合パッケージ。MAIN backend (カゥン氏正本) と Tbackend (豊田テスト用) を ConfigFile で切替起動。",
+  "main": "start.js",
+  "scripts": {
+    "start": "node start.js",
+    "start:main": "node library-backend/server.js",
+    "start:test": "node library-Tbackend/server.js",
+    "install:all": "cd library-backend && npm install && cd ../library-Tbackend && npm install",
+    "init-db:main": "cd library-backend && npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all",
+    "init-db:test": "cd library-Tbackend && npm run init-db",
+    "init-db:all": "npm run init-db:main && npm run init-db:test"
+  },
+  "author": "Kaung Set Linn & Y.Toyoda",
+  "license": "ISC"
+}
