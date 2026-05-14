@@ -4,7 +4,7 @@ const userController = require('../controllers/userController');
 const reservationController = require('../controllers/reservationController');
 const mypageController = require('../controllers/mypageController');
 const dashboardController = require('../controllers/dashboardController');
-// const favoriteController = require('../controllers/favoriteController');
+const favoriteController = require('../controllers/favoriteController');
 // const notificationController = require('../controllers/notificationController');
 const { requireLogin } = require('../middleware/auth');
 
@@ -137,7 +137,7 @@ router.get('/:userId/mypage', requireLogin, mypageController.getMyPage);
  *   403     - 他利用者の userId へのアクセス（W03）
  *   500     - DB例外発生時（E10）
  */
-// router.get('/:userId/favorites', requireLogin, favoriteController.listFavorites);
+router.get('/:userId/favorites', requireLogin, favoriteController.listFavorites);
 
 /*
  * POST /api/v1/users/:userId/favorites  (API-12)
@@ -159,7 +159,7 @@ router.get('/:userId/mypage', requireLogin, mypageController.getMyPage);
  *   409     - 重複登録・UNIQUE 違反（W19）
  *   500     - DB例外発生時（E10）
  */
-// router.post('/:userId/favorites', requireLogin, favoriteController.addFavorite);
+router.post('/:userId/favorites', requireLogin, favoriteController.addFavorite);
 
 /*
  * DELETE /api/v1/users/:userId/favorites/:favoriteId  (API-13)
@@ -177,6 +177,6 @@ router.get('/:userId/mypage', requireLogin, mypageController.getMyPage);
  *   404     - favoriteId 不在・本人外（W17）
  *   500     - DB例外発生時（E10）
  */
-// router.delete('/:userId/favorites/:favoriteId', requireLogin, favoriteController.removeFavorite);
+router.delete('/:userId/favorites/:favoriteId', requireLogin, favoriteController.removeFavorite);
 
 module.exports = router;
