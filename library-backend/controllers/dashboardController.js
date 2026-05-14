@@ -2,9 +2,10 @@ const { Op, literal } = require('sequelize');
 const Reservation    = require('../models/Reservation');
 const Book           = require('../models/Book');
 const Notification   = require('../models/Notification');
+const { _checkOwner }   = require('../helpers/ownerHelper');
 
 // =============================================================
-// API-03  GET /api/users/:userId/dashboard  （G02 対応）
+// API-03  GET /api/v1/users/:userId/dashboard  （G02 対応）
 //
 // 指定利用者のダッシュボード集約データを返却する。
 // 以下のデータを1リクエストで一括取得し、Promise.all で並列実行する。
@@ -24,7 +25,14 @@ const Notification   = require('../models/Notification');
 const MAX_RESERVATIONS = 3;
 
 exports.getDashboard = async (req, res) => {
-    const { userId } = req.params;
+    const userIdNum = parseInt(req.params.userId, 10);
+
+    // --------------------------------------------------
+    // 0. 本人確認（§8.4.2: :userId ≠ session.userId → 403 W03）
+    //    requireLogin ミドルウェアが 401 を処理済みのため、
+    //    セッションは存在する前提で owner チェックのみ行う。
+    // --------------------------------------------------
+    if (!_checkOwner(req, res, userIdNum)) return;
 
     try {
         // --------------------------------------------------
@@ -42,7 +50,7 @@ exports.getDashboard = async (req, res) => {
             // limit を MAX_RESERVATIONS に設定し、上限件数のみ取得する。
             Reservation.findAll({
                 where: {
-                    userId,
+                    userId: userIdNum,
                     status: { [Op.ne]: 'CANCELLED' },
                 },
                 include: [{
@@ -65,7 +73,7 @@ exports.getDashboard = async (req, res) => {
             // ---------- 1-2. 未読通知件数 ----------
             // G02 のヘッダバッジ表示用。SELECT COUNT のみ実行し行データは取得しない。
             Notification.count({
-                where: { userId, isRead: false },
+                where: { userId: userIdNum, isRead: false },
             }),
 
             // ---------- 1-3. 直近通知（最大5件） ----------
@@ -74,7 +82,7 @@ exports.getDashboard = async (req, res) => {
             // G02 のサマリ表示用のため limit 5 に制限する。
             // 全件が必要な場合は API-07 /mypage を参照。
             Notification.findAll({
-                where: { userId },
+                where: { userId: userIdNum },
                 order: [
                     ['isRead',    'ASC'],       // false(0) → true(1) の順
                     ['createdAt', 'DESC'],       // 新しい順
