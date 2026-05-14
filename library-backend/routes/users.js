@@ -5,7 +5,7 @@ const reservationController = require('../controllers/reservationController');
 const mypageController = require('../controllers/mypageController');
 const dashboardController = require('../controllers/dashboardController');
 const favoriteController = require('../controllers/favoriteController');
-// const notificationController = require('../controllers/notificationController');
+const notificationController = require('../controllers/notificationController');
 const { requireLogin } = require('../middleware/auth');
 
 // GET all users
@@ -50,7 +50,7 @@ router.get('/:userId/dashboard', requireLogin, dashboardController.getDashboard)
  *   403     - 他利用者の userId へのアクセス（W03）
  *   500     - DB例外発生時（E10）
  */
-// router.get('/:userId/notifications', requireLogin, notificationController.getNotifications);
+router.get('/:userId/notifications', requireLogin, notificationController.listNotifications);
 
 /*
  * POST /api/v1/users/:userId/notifications/:notificationId/read  (API-14)
@@ -68,7 +68,7 @@ router.get('/:userId/dashboard', requireLogin, dashboardController.getDashboard)
  *   404     - notificationId 不在・本人外（W17）
  *   500     - DB例外発生時（E10）
  */
-// router.post('/:userId/notifications/:notificationId/read', requireLogin, notificationController.markRead);
+router.post('/:userId/notifications/:notificationId/read', requireLogin, notificationController.markAsRead);
 
 /*
  * GET /api/v1/users/:userId/reservations/active
