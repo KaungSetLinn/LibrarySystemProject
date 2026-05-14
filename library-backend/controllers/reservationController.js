@@ -6,6 +6,7 @@ const Loan = require('../models/Loan');
 const History = require('../models/History');
 const Notification = require('../models/Notification');
 const Audit = require('../models/Audit');
+const { _writeAuditLog } = require('../helpers/auditHelper');
 
 const RESERVATION_STATUS = require('../constants/reservationStatus');
 
@@ -86,23 +87,6 @@ function _calcPickupDeadline() {
     const d = new Date();
     d.setDate(d.getDate() + 7);
     return d.toISOString().slice(0, 10);
-}
-
-// =============================================================
-// 補助関数: audit ログ書き込み（仕様書 8.3）
-// トランザクション外で呼ぶため transaction は渡さない。
-// =============================================================
-async function _writeAuditLog({ level, eventType, userId, message }) {
-    try {
-        await Audit.create({
-            level,
-            eventType,
-            userId: userId ?? null,
-            message,
-        });
-    } catch (_) {
-        // audit 書き込み失敗はサイレントに無視（本処理を止めない）
-    }
 }
 
 // =============================================================
