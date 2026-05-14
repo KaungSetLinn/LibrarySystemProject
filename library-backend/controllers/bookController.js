@@ -216,3 +216,85 @@ exports.searchBooks = async (req, res) => {
         });
     }
 };
+
+// =============================================================
+// API-04b  GET /api/v1/books/:bookId
+//
+// 指定IDの書籍1件を取得する（§8.4.3b）
+// 推薦項目表示などで利用
+// =============================================================
+exports.getBookById = async (req, res) => {
+
+    try {
+
+        // =========================
+        // 1. bookId バリデーション
+        // =========================
+        const bookIdNum = parseInt(req.params.bookId, 10);
+
+        if (!Number.isInteger(bookIdNum) || bookIdNum <= 0) {
+            return res.status(400).json({
+                result:      'error',
+                messageCode: 'E01',
+                message:     '入力に誤りがあります。',
+                data:        null,
+            });
+        }
+
+        // =========================
+        // 2. 書籍取得
+        // =========================
+        const book = await Book.findOne({
+            where: { bookId: bookIdNum },
+            attributes: [
+                'bookId',
+                'title',
+                'author',
+                'category',
+                'arrivalDate',
+                'isDisabled',
+            ],
+        });
+
+        // =========================
+        // 3. 書籍不存在（W17）
+        // =========================
+        if (!book) {
+            return res.status(404).json({
+                result:      'error',
+                messageCode: 'W17',
+                message:     '対象が見つかりません。',
+                data:        null,
+            });
+        }
+
+        // =========================
+        // 4. レスポンス返却
+        // =========================
+        return res.status(200).json({
+            result:      'success',
+            messageCode: 'I00',
+            message:     'OK',
+            data: {
+                bookId:      Number(book.bookId),
+                title:       book.title,
+                author:      book.author,
+                category:    book.category,
+                arrivalDate: book.arrivalDate,
+                isDisabled:  book.isDisabled,
+            },
+        });
+
+    } catch (err) {
+
+        // =========================
+        // 5. システムエラー（E10）
+        // =========================
+        return res.status(500).json({
+            result:      'error',
+            messageCode: 'E10',
+            message:     'システムエラーが発生しました。',
+            data:        null,
+        });
+    }
+};

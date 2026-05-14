@@ -42,6 +42,6 @@ router.get('/search', bookController.searchBooks);
  *   404     - 書籍不在（W17）
  *   500     - DB例外発生時（E10）
  */
-// router.get('/:bookId', bookController.getBookById);
+router.get('/:bookId', bookController.getBookById);
 
 module.exports = router;
