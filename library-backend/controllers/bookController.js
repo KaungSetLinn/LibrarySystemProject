@@ -37,7 +37,7 @@ function _determineBookActionState(book, loanMap, reservationMap, currentUserId)
 
 // =============================================================
 // searchBooks
-// GET /api/books/search
+// GET /api/v1/books/search
 //   ?title=<部分一致>
 //   &author=<部分一致>
 //   &category=<完全一致>
