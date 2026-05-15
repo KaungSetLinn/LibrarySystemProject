@@ -17,7 +17,7 @@ const userRoutes = require('./routes/users');
 const bookRoutes = require('./routes/books');
 const reservationRoutes = require('./routes/reservations');
 const adminRoutes = require('./routes/admin');
-// const loanRoutes = require('./routes/loans');
+const loanRoutes = require('./routes/loans');
 const healthRoutes = require('./routes/health');
 
 const app = express();
@@ -64,7 +64,7 @@ app.use('/api/v1/users', userRoutes);               // API-03/03b/06/07/11/12/13
 app.use('/api/v1/books', bookRoutes);               // API-04 GET /search, API-04b GET /:bookId
 app.use('/api/v1/reservations', reservationRoutes); // API-05 POST /
 app.use('/api/v1/admin/bridge', adminRoutes);       // API-08a/08b/08c
-// app.use('/api/v1/loans', loanRoutes);               // API-09 POST /events
+app.use('/api/v1/loans', loanRoutes);               // API-09 POST /events
 app.use('/api/v1/health', healthRoutes);            // API-10 GET /
 
 // PROTECTED ROUTE
