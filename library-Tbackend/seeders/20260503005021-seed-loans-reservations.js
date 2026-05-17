@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Database seeder. Keep demo data values consistent with frontend filters and backend validation rules.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: library-Tbackend/seeders/20260503005021-seed-loans-reservations.js
+ * 責務: DB seed データ投入。開発・検証用の初期レコードを定義する。
+ * 保守メモ: 画面の固定選択肢やテスト期待値と category/status などの値を同期する。
  */
 'use strict';
 

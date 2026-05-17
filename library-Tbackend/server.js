@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Reviewed source file. Comments describe intent, boundaries, and risk areas rather than restating syntax.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: library-Tbackend/server.js
+ * 責務: 豊田テスト backend の起動エントリ。Express、session、静的配信、API ルートを組み立てる。
+ * 保守メモ: frontend の ApiAdapter が期待するパスと、このサーバが公開するパスを一致させる。
  */
 /*
  * -----------------------------------------------------------------------------
@@ -25,6 +25,7 @@ require('./models/associations');
 
 const userRoutes = require('./routes/users');
 const bookRoutes = require('./routes/books');
+const reservationRoutes = require('./routes/reservations');
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.get('/api/v1/health', (req, res) => {
 
 app.use('/api/users', userRoutes);
 app.use('/api/books', bookRoutes);
+app.use('/api/reservations', reservationRoutes);
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(frontendPath, 'reservation-status.html'));
@@ -70,6 +72,11 @@ const PORT = process.env.PORT || 3000;
 sequelize.authenticate()
     .then(() => {
         console.log('✅ [Tbackend] Database connected (libraryT.db)');
+        // 初回起動や空DBでも予約・通知・監査ログのテーブル不足で落ちないよう補完する。
+        return sequelize.sync();
+    })
+    .then(() => {
+        console.log('✅ [Tbackend] Application tables synced');
         app.listen(PORT, () => {
             console.log(`🅃 [Tbackend] Server running on port ${PORT}`);
             console.log(`   frontend = ${frontendPath}`);

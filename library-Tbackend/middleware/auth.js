@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Authentication middleware for the test backend. Keep session checks small and auditable.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: library-Tbackend/middleware/auth.js
+ * 責務: 認証ミドルウェア。未ログイン API リクエストを JSON エラーへ変換する。
+ * 保守メモ: 画面遷移用 redirect と API 用 JSON を混同しないこと。
  */
 exports.requireLogin = (req, res, next) => {
     if (!req.session.user) {

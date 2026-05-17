@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Database connection setup for the test backend. Keep environment-dependent paths and options centralized here.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: library-Tbackend/db/connection.js
+ * 責務: 豊田テスト backend の DB 接続設定。SQLite ファイルと Sequelize 接続を生成する。
+ * 保守メモ: DB ファイル名は start.js の backendMode 判定と一致させる。
  */
 /*
  * -----------------------------------------------------------------------------
