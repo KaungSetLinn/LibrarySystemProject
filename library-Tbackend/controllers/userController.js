@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Test-backend controller. Keep request validation, DB access, and response mapping visible as separate steps.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: library-Tbackend/controllers/userController.js
+ * 責務: 豊田テスト backend の Controller。HTTP 入出力、DB問い合わせ、レスポンス整形を担当する。
+ * 保守メモ: フロントエンド契約とレスポンス項目名を揃えること。検索結果では actionState/canReserve が UI 制御に使われる。
  */
 /*
  * -----------------------------------------------------------------------------

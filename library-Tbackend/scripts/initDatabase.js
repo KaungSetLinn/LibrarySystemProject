@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Operational script for database setup. Keep destructive setup steps explicit and easy to review.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: library-Tbackend/scripts/initDatabase.js
+ * 責務: 豊田テスト backend の DB 初期化スクリプト。migrate/seed をまとめて実行する。
+ * 保守メモ: 破壊的な初期化は開発環境向け。実行順と対象 DB をログで確認できるようにする。
  */
 /*
  * -----------------------------------------------------------------------------

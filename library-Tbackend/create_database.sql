@@ -1,7 +1,7 @@
--- Readable-code review note:
--- - Role: Reference SQL schema. Keep this aligned with Sequelize migrations and model definitions.
--- - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
--- - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+-- READABLE-CODE REVIEW NOTE
+-- 対象ファイル: library-Tbackend/create_database.sql
+-- 責務: SQLite 直接作成用 SQL。ORM を使わない環境で同等スキーマを用意する。
+-- 保守メモ: Sequelize migration/model と列名・制約を揃えること。
 CREATE TABLE books (
     bookId INTEGER NOT NULL PRIMARY KEY,
     title TEXT NOT NULL,

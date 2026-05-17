@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Test-backend route definitions. Keep authentication boundary and controller delegation easy to audit.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: library-Tbackend/routes/users.js
+ * 責務: 豊田テスト backend のルーティング定義。URL と Controller の対応だけを担当する。
+ * 保守メモ: 認証要否やパス接頭辞は frontend ApiAdapter と揃える。処理内容は Controller に閉じ込める。
  */
 /*
  * -----------------------------------------------------------------------------
@@ -24,6 +24,7 @@ router.post('/logout', userController.logout);
 router.get('/', requireLogin, userController.getAllUsers);
 router.get('/:id', requireLogin, userController.getUserById);
 router.get('/:userId/reservations/active', requireLogin, reservationController.getActiveReservations);
+router.delete('/:userId/reservations/:reservationId', requireLogin, reservationController.cancelReservation);
 
 // === 追加機能: お気に入り CRUD ===
 router.get(   '/:userId/favorites',            requireLogin, favoriteController.listFavorites);

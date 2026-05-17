@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Sequelize model definition. Field names and types are part of the API contract with controllers and seeders.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: library-Tbackend/models/index.js
+ * 責務: Sequelize モデル定義。DB列名、型、制約を JS オブジェクトとして表現する。
+ * 保守メモ: Controller の業務判断をモデルへ混ぜず、テーブル構造の SSOT として保つ。
  */
 'use strict';
 
