@@ -234,7 +234,6 @@ exports.searchBooks = async (req, res) => {
 // 推薦項目表示などで利用
 // =============================================================
 exports.getBookById = async (req, res) => {
-
     try {
 
         // =========================
@@ -243,10 +242,10 @@ exports.getBookById = async (req, res) => {
         const currentUserId = req.session?.user?.userId ?? null;
         if (currentUserId === null) {
             return res.status(401).json({
-                result:      'error',
+                result: 'error',
                 messageCode: 'W02',
-                message:     'セッションが切れました。再度ログインしてください。',
-                data:        null,
+                message: 'セッションが切れました。再度ログインしてください。',
+                data: null,
             });
         }
 
@@ -257,10 +256,10 @@ exports.getBookById = async (req, res) => {
 
         if (!Number.isInteger(bookIdNum) || bookIdNum <= 0) {
             return res.status(400).json({
-                result:      'error',
+                result: 'error',
                 messageCode: 'E01',
-                message:     '入力に誤りがあります。',
-                data:        null,
+                message: '入力に誤りがあります。',
+                data: null,
             });
         }
 
@@ -276,7 +275,7 @@ exports.getBookById = async (req, res) => {
                 'category',
                 'arrivalDate',
                 'isDisabled',
-                'canReserve',  // §24.3 補助項目 canReserve 取得用に追加
+                'canReserve',
             ],
         });
 
@@ -285,46 +284,74 @@ exports.getBookById = async (req, res) => {
         // =========================
         if (!book) {
             return res.status(404).json({
-                result:      'error',
+                result: 'error',
                 messageCode: 'W17',
-                message:     '対象が見つかりません。',
-                data:        null,
+                message: '対象が見つかりません。',
+                data: null,
             });
         }
 
         // =========================
-        // 5. レスポンス返却
+        // 5. 貸出・予約状態を取得し actionState を判定
         // =========================
-        // §24.3: canReserve は UI 補助項目。
-        // Book モデルで BOOLEAN NOT NULL DEFAULT true と定義済みのため null/undefined は発生しない。
-        // isDisabled=true の場合は予約不可なので強制 false とする。
-        const canReserve = book.canReserve && !book.isDisabled;
+        const [activeLoan, activeReservation] = await Promise.all([
+            Loan.findOne({
+                where: { bookId: bookIdNum, returnDate: null },
+                attributes: ['bookId', 'dueDate'],
+            }),
+            Reservation.findOne({
+                where: { bookId: bookIdNum, status: { [Op.ne]: 'CANCELLED' } },
+                attributes: ['bookId', 'userId'],
+            }),
+        ]);
 
+        const loanMap = new Map(activeLoan ? [[activeLoan.bookId, activeLoan]] : []);
+        const reservationMap = new Map(
+            activeReservation ? [[Number(activeReservation.bookId), activeReservation.userId]] : []
+        );
+
+        const { actionState } = _determineBookActionState(
+            book,
+            loanMap,
+            reservationMap,
+            currentUserId
+        );
+
+        const CAN_RESERVE_MAP = {
+            AVAILABLE: true,
+            ON_LOAN: true,
+            RESERVED: false,
+            DISABLED: false,
+        };
+
+        // =========================
+        // 6. レスポンス返却
+        // =========================
         return res.status(200).json({
-            result:      'success',
+            result: 'success',
             messageCode: 'I00',
-            message:     'OK',
+            message: 'OK',
             data: {
-                bookId:      Number(book.bookId),   // §24.3: integer 型で統一
-                title:       book.title,
-                author:      book.author,
-                category:    book.category,
+                bookId: Number(book.bookId),
+                title: book.title,
+                author: book.author,
+                category: book.category,
                 arrivalDate: book.arrivalDate,
-                isDisabled:  book.isDisabled,
-                canReserve,                         // §24.3: △ 補助項目（既存クライアント互換を維持しつつ追加）
+                isDisabled: book.isDisabled,
+                canReserve: CAN_RESERVE_MAP[actionState] ?? false,
             },
         });
 
     } catch (err) {
 
         // =========================
-        // 6. システムエラー（E10）
+        // 7. システムエラー（E10）
         // =========================
         return res.status(500).json({
-            result:      'error',
+            result: 'error',
             messageCode: 'E10',
-            message:     'システムエラーが発生しました。',
-            data:        null,
+            message: 'システムエラーが発生しました。',
+            data: null,
         });
     }
 };
