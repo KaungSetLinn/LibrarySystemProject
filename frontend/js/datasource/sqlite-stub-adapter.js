@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Fallback repository for environments without SQLite. Keep behavior close to the real adapter for tests and demos.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/datasource/sqlite-stub-adapter.js
  * 概要       : SQLiteStubAdapter（RP01 SQLiteRepository のスタブ実装）。

@@ -1,3 +1,7 @@
+' Readable-code review note:
+' - Role: Excel/VBA bridge code. Keep data marshaling explicit because JavaScript and VBA use different runtime assumptions.
+' - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+' - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
 Attribute VB_Name = "LibraryExcelBridge"
 Option Explicit
 

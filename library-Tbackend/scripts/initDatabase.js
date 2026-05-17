@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Operational script for database setup. Keep destructive setup steps explicit and easy to review.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * -----------------------------------------------------------------------------
  * ファイル名 : library-Tbackend/scripts/initDatabase.js
  * 概要       : Tbackend 用 DB(libraryT.db) を初期化。

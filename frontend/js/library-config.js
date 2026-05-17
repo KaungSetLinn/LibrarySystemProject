@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Runtime configuration fallback. Keep values declarative and consistent with library-system-config.txt.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/library-config.js
  * 概要       : ハードコード安全網(FALLBACK)。

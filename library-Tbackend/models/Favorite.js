@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Sequelize model definition. Field names and types are part of the API contract with controllers and seeders.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * -----------------------------------------------------------------------------
  * ファイル名 : library-Tbackend/models/Favorite.js
  * 概要       : お気に入りモデル(豊田 v3.0.6 由来、Tbackend 追加機能)。

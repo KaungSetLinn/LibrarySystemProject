@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Reference test. The assertions document the expected behavior for configuration, API paths, and UI flows.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : test/test-csrf-client.js
  * 概要       : ApiClient（CSRF 自動取得・付与・リトライ）の検証テスト。

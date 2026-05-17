@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Shared presentation rules. Keep layout concerns in CSS instead of encoding visual behavior in JavaScript.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : css/style.css
  * 概要       : 図書予約システム共通スタイル。

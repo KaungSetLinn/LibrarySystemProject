@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Test-backend route definitions. Keep authentication boundary and controller delegation easy to audit.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * -----------------------------------------------------------------------------
  * ファイル名 : library-Tbackend/routes/users.js
  * 概要       : 利用者ルーティング。MAIN backend 互換 + favorites/notifications 追加。

@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Test-backend controller. Keep request validation, DB access, and response mapping visible as separate steps.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * -----------------------------------------------------------------------------
  * ファイル名 : library-Tbackend/controllers/userController.js
  * 概要       : 利用者コントローラ。MAIN backend と互換 + 監査ログ自動記録。

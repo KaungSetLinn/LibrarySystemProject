@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Selects the backend process from configuration and delegates execution. Keep parsing rules aligned with frontend configuration files.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : start.js
  * 概要       : ConfigFile (frontend/library-system-config.txt) の backendMode を

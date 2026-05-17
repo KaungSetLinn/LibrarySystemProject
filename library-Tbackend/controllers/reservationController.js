@@ -1,3 +1,9 @@
+/*
+ * Readable-code review note:
+ * - Role: Test-backend controller. Keep request validation, DB access, and response mapping visible as separate steps.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
 const { Op, literal } = require('sequelize');
 const Book = require('../models/Book');
 const Reservation = require('../models/Reservation');

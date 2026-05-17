@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: SQLite repository adapter. Query construction here is the local equivalent of backend search SQL.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : app/js/datasource/sqlite-adapter.js
  * 概要       : SQLiteAdapter（RP01 SQLiteRepository 本実装）。

@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Test-backend controller. Keep request validation, DB access, and response mapping visible as separate steps.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * -----------------------------------------------------------------------------
  * ファイル名 : library-Tbackend/controllers/notificationController.js
  * 概要       : 通知コントローラ(豊田 v3.0.6 由来、Tbackend 追加)。

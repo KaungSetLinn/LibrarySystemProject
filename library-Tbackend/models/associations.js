@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Sequelize model definition. Field names and types are part of the API contract with controllers and seeders.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * -----------------------------------------------------------------------------
  * ファイル名 : library-Tbackend/models/associations.js
  * 概要       : モデル間関連の定義。MAIN backend と互換 + Favorite/Notification 追加。

@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Shared UI helpers. Keep rendering utilities side-effect-light so screens remain predictable.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/core/ui-common.js
  * 概要       : 画面共通の UI ユーティリティ。

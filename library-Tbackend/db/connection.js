@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Database connection setup for the test backend. Keep environment-dependent paths and options centralized here.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * -----------------------------------------------------------------------------
  * ファイル名 : library-Tbackend/db/connection.js
  * 概要       : 豊田テストバックエンドの Sequelize 接続。

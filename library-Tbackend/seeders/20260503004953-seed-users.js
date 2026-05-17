@@ -1,3 +1,9 @@
+/*
+ * Readable-code review note:
+ * - Role: Database seeder. Keep demo data values consistent with frontend filters and backend validation rules.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
 'use strict';
 
 module.exports = {

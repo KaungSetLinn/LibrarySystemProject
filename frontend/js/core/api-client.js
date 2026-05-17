@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Low-level HTTP client. Keep transport, CSRF, and response parsing concerns here instead of in screens.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : app/js/core/api-client.js
  * 概要       : サーバーモード用 fetch wrapper（v3.0.3 / A-5 対応）。

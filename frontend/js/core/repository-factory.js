@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Chooses the active repository implementation. Availability checks here decide which data source contract the service layer receives.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/core/repository-factory.js
  * 概要       : RepositoryFactory。ConfigManager.dbType に応じて

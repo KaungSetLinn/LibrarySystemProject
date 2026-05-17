@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: User-facing message catalog. Prefer stable message codes so UI and tests do not depend on text fragments.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/core/messages.js
  * 概要       : メッセージマスタ。messageCode と表示文言の対応を一元管理する。
