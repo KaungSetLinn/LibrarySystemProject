@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Reviewed source file. Comments describe intent, boundaries, and risk areas rather than restating syntax.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/app.js
+ * 責務: SPA 起動エントリ。設定解決、DataSource 自己診断、Router 起動を順番に行う。
+ * 保守メモ: ConfigManager.init() 後に動く処理だけをここへ置き、画面固有処理は screen-* に分離する。
  */
 /*
  * =============================================================================
@@ -48,6 +48,23 @@
  */
 "use strict";
 
+
+async function initializeConfiguredDataSources() {
+  const dbType = (window.ConfigManager && ConfigManager.get("dbType")) || "Excel";
+  if (dbType !== "SQLite") return;
+
+  // 統合起動（node start.js）では HTTP API を優先する。
+  // サーバが無い file:// / 静的配信環境では sql.js または Excel へフォールバックする。
+  if (window.ApiAdapter && typeof ApiAdapter.ping === "function") {
+    await ApiAdapter.ping();
+  }
+  if ((!window.ApiAdapter || !ApiAdapter.isAvailable()) &&
+      window.SQLiteAdapter && typeof SQLiteAdapter.init === "function") {
+    await SQLiteAdapter.init();
+  }
+}
+
+
 /**
  * bootApp
  * 概要 : 全画面共通の初期化と SPA 起動を行う。
@@ -72,18 +89,33 @@ async function bootApp() {
     }
 
     // ----------------------------------------------------------------
-    // (2) DataSource 契約セルフチェック（議事録 P3-08）
+    // (2) SQLite / API DataSource 初期化
+    //     ConfigManager.init() 完了後に起動することで、txt 設定読込前に
+    //     Adapter が dbType=Excel と誤判定して停止する競合を避ける。
+    // ----------------------------------------------------------------
+    if (window.ConfigManager && ConfigManager.get("dbType") === "SQLite") {
+      let sqliteReady = false;
+      if (window.SQLiteAdapter && typeof SQLiteAdapter.init === "function") {
+        sqliteReady = await SQLiteAdapter.init();
+      }
+      if (!sqliteReady && window.ApiAdapter && typeof ApiAdapter.ping === "function") {
+        await ApiAdapter.ping();
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // (3) DataSource 契約セルフチェック（議事録 P3-08）
     // ----------------------------------------------------------------
     if (window.DataSource) DataSource.runSelfCheck();
 
     // ----------------------------------------------------------------
-    // (3) ブラウザ警告 / モバイルナビ
+    // (4) ブラウザ警告 / モバイルナビ
     // ----------------------------------------------------------------
     if (typeof checkBrowserWarning === "function") checkBrowserWarning();
     if (typeof buildMobileBottomNav === "function") buildMobileBottomNav();
 
     // ----------------------------------------------------------------
-    // (4) SPA Router 起動
+    // (5) SPA Router 起動
     // ----------------------------------------------------------------
     if (window.Router) {
       await Router.start();
@@ -91,7 +123,7 @@ async function bootApp() {
     }
 
     // ----------------------------------------------------------------
-    // (5) 全画面共通：トップレベル例外ハンドラ（議事録 P4-04）
+    // (6) 全画面共通：トップレベル例外ハンドラ（議事録 P4-04）
     // ----------------------------------------------------------------
     window.addEventListener("error", e => {
       Logger.error("window.onerror", e.message, { filename: e.filename, lineno: e.lineno });

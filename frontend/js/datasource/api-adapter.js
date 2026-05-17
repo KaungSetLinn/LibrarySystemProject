@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: HTTP repository adapter. It must normalize backend responses into the same contract as local repositories.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/datasource/api-adapter.js
+ * 責務: IRepository 契約の実装。Excel/localStorage、SQLite、HTTP API などの保存先差分を吸収する。
+ * 保守メモ: 戻り値形式を画面が期待する ViewModel に正規化すること。特に actionState/canReserve は予約ボタン制御に直結する。
  */
 /*
  * =============================================================================
@@ -13,8 +13,8 @@
  *
  *              ★ 統合パッケージ改訂(v3.0.6+integration) ★
  *              ConfigManager.getBackendMode() を参照して MAIN / TEST を切替:
- *                MAIN ⇒ library-backend (カゥン氏正本) /api/users/* /api/books/*
- *                TEST ⇒ library-Tbackend (豊田テスト)  /api/v1/*
+ *                MAIN ⇒ library-backend (正本)       /api/v1/*
+ *                TEST ⇒ library-Tbackend (テスト)   /api/users/* /api/books/*
  *              UI 本体には一切影響しない(同じメソッド名・戻り値形式を維持)。
  *
  * 仕様書トレーサビリティ:
@@ -45,31 +45,6 @@ const ApiAdapter = (() => {
     }
   }
 
-  /* ============================================================
-   *  backendMode 判定とパス選択
-   *
-   *  MAIN モード(カゥン氏 library-backend):
-   *    /api/users/login
-   *    /api/users/logout
-   *    /api/users/:userId
-   *    /api/users/:userId/reservations/active
-   *    /api/books/search
-   *    /api/users/:userId/favorites           (Tbackend にもあり)
-   *    ※ MAIN は favorites/notifications 未実装。fetch 失敗時は空配列で返す。
-   *
-   *  TEST モード(豊田 library-Tbackend):
-   *    /api/users/login        (互換)
-   *    /api/users/logout       (互換)
-   *    /api/users/:userId/reservations/active
-   *    /api/books/search
-   *    /api/users/:userId/favorites
-   *    /api/users/:userId/favorites/:fid
-   *    /api/users/:userId/notifications
-   *    /api/users/:userId/notifications/read-all
-   *    /api/users/:userId/notifications/:nid/read
-   *    /api/v1/health
-   * ============================================================ */
-
   function _mode() {
     if (window.ConfigManager && typeof ConfigManager.getBackendMode === "function") {
       return ConfigManager.getBackendMode();
@@ -77,75 +52,143 @@ const ApiAdapter = (() => {
     return "MAIN";
   }
 
-  /**
-   * _path
-   * MAIN/TEST どちらも実 backend は /api/users/* と /api/books/* を提供する。
-   * (v2 で作成した library-Tbackend は MAIN 互換 + 拡張 API)
-   * よって基本は同一パスでよく、health のみ TEST 専用となる。
-   */
-  function _path(name, params) {
-    const p = params || {};
-    switch (name) {
-      case "login":             return "/api/users/login";
-      case "logout":            return "/api/users/logout";
-      case "activeReservations":
-        return "/api/users/" + encodeURIComponent(p.userId) + "/reservations/active";
-      case "booksSearch":       return "/api/books/search";
-      case "userById":          return "/api/users/" + encodeURIComponent(p.userId);
-      // favorites(TEST のみ実装、MAIN は 404 になる想定)
-      case "favoritesList":
-        return "/api/users/" + encodeURIComponent(p.userId) + "/favorites";
-      case "favoritesAdd":
-        return "/api/users/" + encodeURIComponent(p.userId) + "/favorites";
-      case "favoritesRemove":
-        return "/api/users/" + encodeURIComponent(p.userId) +
-               "/favorites/" + encodeURIComponent(p.favoriteId);
-      // notifications(TEST のみ実装)
-      case "notifList":
-        return "/api/users/" + encodeURIComponent(p.userId) + "/notifications";
-      case "notifMarkRead":
-        return "/api/users/" + encodeURIComponent(p.userId) +
-               "/notifications/" + encodeURIComponent(p.notificationId) + "/read";
-      case "notifMarkAllRead":
-        return "/api/users/" + encodeURIComponent(p.userId) + "/notifications/read-all";
-      case "health":            return "/api/v1/health";
-      default: return "/";
-    }
+  function _isMain() { return _mode() === "MAIN"; }
+
+  function _apiPrefix() {
+    return _isMain() ? "/api/v1" : "/api";
   }
 
   /**
-   * ping
-   * /api/v1/health に GET して server/ の存在を確認する。
-   * TEST モード では Tbackend が応答、MAIN モードでは 404 を返すが
-   * fetch 自体は成功するため、available は両モードで true 扱いする。
-   *
-   * @returns {Promise<boolean>}
+   * _path
+   * MAIN は library-backend の /api/v1/*、TEST は library-Tbackend の
+   * /api/users・/api/books 系を使用する。パス差分をここに閉じ込め、
+   * 画面・Service 層に backendMode の分岐を漏らさない。
    */
+  function _path(name, params) {
+    const p = params || {};
+    const prefix = _apiPrefix();
+    switch (name) {
+      case "login":
+        return _isMain() ? prefix + "/auth/login" : prefix + "/users/login";
+      case "logout":
+        return _isMain() ? prefix + "/auth/logout" : prefix + "/users/logout";
+      case "activeReservations":
+        return prefix + "/users/" + encodeURIComponent(p.userId) + "/reservations/active";
+      case "booksSearch":
+        return prefix + "/books/search";
+      case "bookById":
+        return prefix + "/books/" + encodeURIComponent(p.bookId);
+      case "bookCategories":
+        return prefix + "/books/categories";
+      case "reserveBook":
+        return prefix + "/reservations";
+      case "cancelReservation":
+        return prefix + "/users/" + encodeURIComponent(p.userId) +
+               "/reservations/" + encodeURIComponent(p.reservationId);
+      case "userById":
+        return prefix + "/users/" + encodeURIComponent(p.userId);
+      case "favoritesList":
+      case "favoritesAdd":
+        return prefix + "/users/" + encodeURIComponent(p.userId) + "/favorites";
+      case "favoritesRemove":
+        return prefix + "/users/" + encodeURIComponent(p.userId) +
+               "/favorites/" + encodeURIComponent(p.favoriteId);
+      case "notifList":
+        return prefix + "/users/" + encodeURIComponent(p.userId) + "/notifications";
+      case "notifMarkRead":
+        return prefix + "/users/" + encodeURIComponent(p.userId) +
+               "/notifications/" + encodeURIComponent(p.notificationId) + "/read";
+      case "notifMarkAllRead":
+        return prefix + "/users/" + encodeURIComponent(p.userId) + "/notifications/read-all";
+      case "mypage":
+        return prefix + "/users/" + encodeURIComponent(p.userId) + "/mypage";
+      case "health":
+        return "/api/v1/health";
+      default:
+        return "/";
+    }
+  }
+
+  function _payload(response) {
+    return (response && response.data && typeof response.data === "object")
+      ? response.data
+      : (response || {});
+  }
+
+  function _normalizeBook(raw) {
+    const book = raw || {};
+    const actionState = book.actionState || (book.isDisabled ? "DISABLED" : "AVAILABLE");
+    const canReserve = book.canReserve !== undefined
+      ? Boolean(book.canReserve)
+      : (actionState === "AVAILABLE" || actionState === "ON_LOAN");
+    const status = book.status || ({
+      AVAILABLE: "在庫あり",
+      ON_LOAN: "貸出中",
+      RESERVED: "予約中",
+      DISABLED: "利用不可"
+    })[actionState] || "不明";
+    const actionLabel = book.actionLabel || (canReserve ? "予約する" : status);
+
+    return Object.assign({}, book, {
+      bookId: String(book.bookId),
+      status,
+      actionState,
+      actionLabel,
+      canReserve,
+      dueDate: book.dueDate || null
+    });
+  }
+
+  function _normalizeReservation(raw) {
+    const r = raw || {};
+    return Object.assign({}, r, {
+      reservationId: r.reservationId !== undefined ? String(r.reservationId) : r.reservationId,
+      bookId: r.bookId !== undefined ? String(r.bookId) : r.bookId
+    });
+  }
+
+  function _serviceResult(response, fallbackOk, fallbackError) {
+    if (!response) {
+      return { success: false, messageCode: "E10", message: fallbackError || "処理に失敗しました。" };
+    }
+    if (response.result === "success") {
+      return {
+        success: true,
+        messageCode: response.messageCode || "I00",
+        message: response.message || fallbackOk || "処理しました。",
+        payload: response.data || {}
+      };
+    }
+    if (response.success === true || response.ok === true) {
+      return response;
+    }
+    return {
+      success: false,
+      messageCode: response.messageCode || "E10",
+      message: response.message || response.error || fallbackError || "処理に失敗しました。"
+    };
+  }
+
+  /** /api/v1/health が 2xx を返す場合のみ API 利用可能と判定する。 */
   function ping() {
     if (_pingPromise) return _pingPromise;
     _pingPromise = new Promise(resolve => {
       const controller = (typeof AbortController !== "undefined") ? new AbortController() : null;
       const timer = setTimeout(() => {
         if (controller) controller.abort();
-        // タイムアウト時はサーバが居ない=利用不可
         _available = false;
         resolve(false);
       }, 2000);
       const opts = { method: "GET", credentials: "same-origin" };
       if (controller) opts.signal = controller.signal;
 
-      // health は TEST 専用。MAIN モードでは login エンドポイントの GET で
-      // 405 や 404 が返ることでサーバ存在を確認する。
-      const target = _mode() === "TEST" ? "/api/v1/health" : "/api/users/login";
-
-      fetch(target, opts)
+      fetch(_path("health"), opts)
         .then(r => {
           clearTimeout(timer);
-          // 404/405 でも「サーバ自体は応答した」とみなす
-          _available = true;
-          _log("info", "ApiAdapter.ping",
-               "server reachable (mode=" + _mode() + ", status=" + r.status + ")");
-          resolve(true);
+          _available = !!(r && r.ok);
+          _log(_available ? "info" : "warn", "ApiAdapter.ping",
+               "health status=" + (r && r.status) + " mode=" + _mode());
+          resolve(_available);
         })
         .catch(() => {
           clearTimeout(timer);
@@ -158,32 +201,22 @@ const ApiAdapter = (() => {
 
   function isAvailable() { return _available; }
 
-  /* ============================================================
-   *  IRepository 契約実装
-   *  MAIN/TEST 両方で同じレスポンス形式を返すよう正規化する。
-   * ============================================================ */
-
-  /** ログイン (POST /api/users/login) */
   async function findUser(userCode, userName) {
-    const body = { userId: userCode, userName: userName };
-    const r = await ApiClient.post(_path("login"), body);
-    // MAIN: { userId, userName } を直接返す
-    // TEST: { userId, userName } を直接返す(MAIN 互換実装)
-    if (r && (r.userId !== undefined || (r.result === "success" && r.data))) {
-      const data = r.userId !== undefined ? r : (r.data && r.data.user) || r.data;
-      if (data && data.userId !== undefined) {
-        return { userId: data.userId, userName: data.userName, role: "STUDENT" };
-      }
+    const r = await ApiClient.post(_path("login"), { userId: userCode, userName: userName });
+    const data = _payload(r);
+    if (data && data.userId !== undefined) {
+      return { userId: data.userId, userName: data.userName, role: data.role || "STUDENT" };
+    }
+    if (data && data.user && data.user.userId !== undefined) {
+      return { userId: data.user.userId, userName: data.user.userName, role: data.user.role || "STUDENT" };
     }
     return null;
   }
 
-  /** 有効予約一覧 (GET /api/users/:userId/reservations/active) */
   async function getActiveReservations(userId) {
     const r = await ApiClient.get(_path("activeReservations", { userId }));
-    if (!r) return [];
-    // 共通: { count, reservations: [...] }
-    return r.reservations || (r.data && r.data.reservations) || [];
+    const data = _payload(r);
+    return (data.reservations || []).map(_normalizeReservation);
   }
 
   async function getReservationCount(userId) {
@@ -191,7 +224,6 @@ const ApiAdapter = (() => {
     return Array.isArray(list) ? list.length : 0;
   }
 
-  /** 書籍検索 (GET /api/books/search) */
   async function searchBooks(criteria) {
     const c = criteria || {};
     const params = new URLSearchParams();
@@ -201,29 +233,60 @@ const ApiAdapter = (() => {
     if (c.sort)     params.set("sort", c.sort);
     if (c.page !== undefined)     params.set("page", c.page);
     if (c.pageSize !== undefined) params.set("pageSize", c.pageSize);
+    if (c.availableOnly)  params.set("availableOnly", "true");
+    if (c.reservableOnly) params.set("reservableOnly", "true");
+
     const r = await ApiClient.get(_path("booksSearch") + "?" + params.toString());
-    if (!r) return [];
-    return r.books || (r.data && r.data.books) || [];
+    if (!r || r.result === "error") return r || [];
+
+    const data = _payload(r);
+    let books = (data.books || []).map(_normalizeBook);
+    if (c.availableOnly)  books = books.filter(b => b.actionState === "AVAILABLE");
+    if (c.reservableOnly) books = books.filter(b => b.canReserve === true);
+
+    const count = (c.availableOnly || c.reservableOnly)
+      ? books.length
+      : (Number.isFinite(Number(data.count)) ? Number(data.count) : books.length);
+    const pageSize = Number(data.pageSize || c.pageSize || books.length || 1);
+    const totalPages = (c.availableOnly || c.reservableOnly)
+      ? Math.max(1, Math.ceil(count / pageSize))
+      : (Number(data.totalPages) || Math.max(1, Math.ceil(count / pageSize)));
+
+    return {
+      result: "success",
+      count,
+      page: Number(data.page || c.page || 0),
+      pageSize,
+      totalPages,
+      books
+    };
   }
 
-  /** 予約登録(両 backend で未実装) */
+  async function getCategories() {
+    const r = await ApiClient.get(_path("bookCategories"));
+    if (!r || r.result === "error") return [];
+    const data = _payload(r);
+    return data.categories || r.categories || [];
+  }
+
   async function reserveBook(userId, bookId) {
-    return {
-      result: "error", messageCode: "E10",
-      message: "予約登録 API は現在 backend に未実装です。"
-    };
+    const r = await ApiClient.post(_path("reserveBook", { userId }), { bookId: Number(bookId) || bookId });
+    return _serviceResult(r, "予約しました。", "予約処理に失敗しました。");
   }
 
-  /** 予約取消(両 backend で未実装) */
   async function cancelReservation(userId, reservationId) {
-    return {
-      result: "error", messageCode: "E10",
-      message: "予約取消 API は現在 backend に未実装です。"
-    };
+    const r = await ApiClient.delete(_path("cancelReservation", { userId, reservationId }));
+    return _serviceResult(r, "予約をキャンセルしました。", "取消処理に失敗しました。");
   }
 
-  /** マイページ集約(両 backend で個別取得して合成) */
   async function getMyPageData(userId) {
+    if (_isMain()) {
+      const r = await ApiClient.get(_path("mypage", { userId }));
+      const data = _payload(r);
+      if (data && (data.currentReservations || data.history || data.favorites || data.notifications)) {
+        return data;
+      }
+    }
     try {
       const [reservations, favorites, notifications] = await Promise.all([
         getActiveReservations(userId),
@@ -242,77 +305,61 @@ const ApiAdapter = (() => {
     }
   }
 
-  /** 通知一覧(MAIN は未実装→空配列で返す、TEST は実装) */
   async function getNotifications(userId) {
-    if (_mode() !== "TEST") return [];
     const r = await ApiClient.get(_path("notifList", { userId }));
-    if (!r) return [];
-    return r.notifications || (r.data && r.data.notifications) || [];
+    if (!r || r.result === "error") return [];
+    const data = _payload(r);
+    return data.notifications || r.notifications || [];
   }
 
-  /** 通知既読化(TEST のみ動作) */
   async function markNotificationRead(userId, notificationId) {
-    if (_mode() !== "TEST") {
-      return { result: "error", messageCode: "E10", message: "MAIN モードでは未実装。" };
-    }
-    const r = await ApiClient.post(
-      _path("notifMarkRead", { userId, notificationId }), {});
-    return r;
+    const r = await ApiClient.post(_path("notifMarkRead", { userId, notificationId }), {});
+    return _serviceResult(r, "通知を既読にしました。", "既読化に失敗しました。");
   }
 
-  /** お気に入り一覧(配列で返す内部 helper) */
   async function listFavoritesArray(userId) {
-    if (_mode() !== "TEST") return [];
     const r = await ApiClient.get(_path("favoritesList", { userId }));
-    if (!r) return [];
-    return r.favorites || (r.data && r.data.favorites) || [];
+    if (!r || r.result === "error") return [];
+    const data = _payload(r);
+    return data.favorites || r.favorites || [];
   }
 
-  /** お気に入り一覧(オリジナル API 互換、レスポンス全体を返す) */
   async function listFavorites(userId, opts) {
-    if (_mode() !== "TEST") {
-      return { result: "success", count: 0, favorites: [] };
-    }
     const r = await ApiClient.get(_path("favoritesList", { userId }));
     return r || { result: "success", count: 0, favorites: [] };
   }
 
-  /** お気に入り追加(TEST のみ動作。W19 重複は code:W19 で返る) */
   async function addFavorite(userId, bookId) {
-    if (_mode() !== "TEST") {
-      return { result: "error", messageCode: "E10", message: "MAIN モードでは未実装。" };
-    }
-    const r = await ApiClient.post(
-      _path("favoritesAdd", { userId }), { bookId: Number(bookId) });
-    return r;
+    const r = await ApiClient.post(_path("favoritesAdd", { userId }), { bookId: Number(bookId) || bookId });
+    return _serviceResult(r, "お気に入りに追加しました。", "お気に入り追加に失敗しました。");
   }
 
-  /** お気に入り削除(TEST のみ動作) */
   async function removeFavorite(userId, favoriteId) {
-    if (_mode() !== "TEST") {
-      return { result: "error", messageCode: "E10", message: "MAIN モードでは未実装。" };
-    }
     const r = await ApiClient.delete(_path("favoritesRemove", { userId, favoriteId }));
-    return r;
+    return _serviceResult(r, "お気に入りから削除しました。", "お気に入り削除に失敗しました。");
   }
 
-  /** 以下、未対応メソッドの簡易スタブ(契約遵守用) */
   async function exportAll()              { return "{}"; }
   async function importAll()              { return { success: false, messageCode: "E10", message: "未対応。" }; }
   async function resetToSeed()            { /* 管理者専用、未実装 */ }
   async function handleLoanEvent()        { return { result: "error", messageCode: "E10", message: "未実装。" }; }
   async function writeAuditLog()          { /* server 側で自動記録される想定 */ }
   async function findBookById(bookId)     {
-    // どちらの backend も /api/books/:id を実装していないため検索で代替
+    const r = await ApiClient.get(_path("bookById", { bookId }));
+    if (r && r.result !== "error") {
+      const data = _payload(r);
+      const book = data.book || data;
+      if (book && book.bookId !== undefined) return _normalizeBook(book);
+    }
     const list = await searchBooks({ title: "", page: 0, pageSize: 100 });
-    return (list || []).find(b => String(b.bookId) === String(bookId)) || null;
+    return (list.books || list || []).find(b => String(b.bookId) === String(bookId)) || null;
   }
 
   return Object.freeze({
     ping, isAvailable,
     findUser,
     getActiveReservations, getReservationCount,
-    searchBooks,
+    searchBooks, getCategories,
     reserveBook, cancelReservation,
     getMyPageData, getNotifications, markNotificationRead,
     listFavorites, addFavorite, removeFavorite,
@@ -325,7 +372,8 @@ const ApiAdapter = (() => {
 window.ApiAdapter = ApiAdapter;
 
 /* =============================================================================
- * 起動時:dbType=SQLite なら ping を試みる(MAIN/TEST 問わず)
+ * 起動時: dbType=SQLite の場合は health check を試みる。
+ * ConfigManager.init() 完了後の確実な初期化は app.js 側でも行う。
  * ============================================================================= */
 (function autoPing() {
   "use strict";

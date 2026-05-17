@@ -1,9 +1,10 @@
-' Readable-code review note:
-' - Role: Excel/VBA bridge code. Keep data marshaling explicit because JavaScript and VBA use different runtime assumptions.
-' - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
-' - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
 Attribute VB_Name = "LibraryExcelBridge"
 Option Explicit
+
+' READABLE-CODE REVIEW NOTE
+' 対象ファイル: frontend/library_excel_bridge.bas
+' 責務: Excel 連携用 VBA ブリッジ。ブラウザ/CSV/Excel 間のデータ受け渡しを補助する。
+' 保守メモ: JavaScript 側のデータ形式を変える場合は VBA 側の列順・項目名も確認する。
 
 ' -----------------------------------------------------------------------------
 ' Module Name : LibraryExcelBridge

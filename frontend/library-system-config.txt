@@ -10,9 +10,9 @@
 # -----------------------------------------------------------------------------
 # バックエンド切替(統合パッケージ追加キー)
 #   MAIN … library-backend/ (カゥン氏正本) を起動 (library2.db)
-#          API パス /api/users/* /api/books/*
+#          API パス /api/v1/auth/* /api/v1/users/* /api/v1/books/*
 #   TEST … library-Tbackend/ (豊田テスト用) を起動 (libraryT.db)
-#          API パス /api/v1/* (v3.0.6-final 互換)
+#          API パス /api/users/* /api/books/* /api/reservations
 # 既定 : MAIN(本番安全側)
 # -----------------------------------------------------------------------------
 backendMode=MAIN

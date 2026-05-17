@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
-  Readable-code review note:
-  - Role: Legacy page wrapper or route entry. Keep redirect and navigation behavior stable while the SPA owns the screen logic.
-  - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
-  - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+  READABLE-CODE REVIEW NOTE
+  対象ファイル: frontend/login.html
+  責務: HTML エントリまたはリダイレクトページ。SPA では index.html へ画面遷移を集約する。
+  保守メモ: 画面ロジックは script 先の screen-* に集約し、HTML には構造と読込順だけを置く。
 -->
 <html lang="ja">
 <head>

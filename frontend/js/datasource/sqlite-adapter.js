@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: SQLite repository adapter. Query construction here is the local equivalent of backend search SQL.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/datasource/sqlite-adapter.js
+ * 責務: IRepository 契約の実装。Excel/localStorage、SQLite、HTTP API などの保存先差分を吸収する。
+ * 保守メモ: 戻り値形式を画面が期待する ViewModel に正規化すること。特に actionState/canReserve は予約ボタン制御に直結する。
  */
 /*
  * =============================================================================
@@ -440,6 +440,12 @@ const SQLiteAdapter = (() => {
     return r ? r.c : 0;
   }
 
+  function getCategories() {
+    if (!_ready) return [];
+    return _all("SELECT DISTINCT category FROM books WHERE category IS NOT NULL AND TRIM(category) <> '' ORDER BY category ASC")
+      .map(r => r.category);
+  }
+
   /** @spec RF-04/05/06 / SR02 / SR04 */
   function searchBooks(criteria) {
     if (!_ready) return [];
@@ -474,11 +480,16 @@ const SQLiteAdapter = (() => {
       else if (myRes.has(b.bookId))    { actionState = "RESERVED"; actionLabel = "予約済（自分）"; }
       else if (otherRes.has(b.bookId)) { actionState = "RESERVED"; actionLabel = "予約済（他利用者）"; }
       else                              { actionState = "AVAILABLE"; actionLabel = "予約する"; }
+      const canReserve = actionState === "AVAILABLE" || actionState === "ON_LOAN";
       return Object.assign({}, b, {
         bookId: String(b.bookId),
         status: b.isDisabled ? "利用停止" : "在庫あり",
-        actionState, actionLabel, dueDate: null
+        actionState, actionLabel, canReserve, dueDate: null
       });
+    }).filter(v => {
+      if (c.availableOnly && v.actionState !== "AVAILABLE") return false;
+      if (c.reservableOnly && v.canReserve !== true) return false;
+      return true;
     });
   }
 
@@ -762,7 +773,7 @@ const SQLiteAdapter = (() => {
     init, isReady,
     findUser,
     getActiveReservations, getReservationCount,
-    searchBooks,
+    searchBooks, getCategories,
     reserveBook, cancelReservation,
     getMyPageData, getNotifications, markNotificationRead,
     listFavorites, addFavorite, removeFavorite,

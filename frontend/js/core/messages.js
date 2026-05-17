@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: User-facing message catalog. Prefer stable message codes so UI and tests do not depend on text fragments.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/core/messages.js
+ * 責務: フロントエンド共通基盤。設定、ルーティング、サービス境界、ログ、UI共通処理を担当する。
+ * 保守メモ: 画面層とデータソース層を結合しすぎないこと。非同期 API を導入する場合は Service 契約を先に揃える。
  */
 /*
  * =============================================================================

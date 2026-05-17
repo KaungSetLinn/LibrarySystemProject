@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Displays active reservations and cancellation actions. Keep reservation state labels consistent with repository responses.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/screens/screen-reservation-status.js
+ * 責務: 画面コントローラ。DOMイベント、Service呼び出し、画面描画の境界を担当する。
+ * 保守メモ: 画面固有の入力値は Service 層で正規化される前提なので、ここでは「どの値を渡すか」が重要。
  */
 /*
  * =============================================================================
@@ -86,12 +86,12 @@
    * @returns {void}
    * @spec    G02 / RV01
    */
-  function init() {
+  async function init() {
     if (!requireSession()) return;
 
-    const data = Service.getDashboard(Service.getSession().userId);
+    const data = await Service.getDashboard(Service.getSession().userId);
     _renderSummary(data);
-    _renderList(data);
+    await _renderList(data);
   }
 
   /**
@@ -113,7 +113,7 @@
    * @param {Object} data
    * @returns {void}
    */
-  function _renderList(data) {
+  async function _renderList(data) {
     const host = document.querySelector("[data-list-host]");
     if (!host) return;
 
@@ -134,10 +134,10 @@
             <th>予約ID</th><th>書籍</th><th>状態</th><th>予約日</th><th>受取期限</th><th>操作</th>
           </tr>
         </thead><tbody>`;
-    data.reservations.forEach(r => {
-      const book = _findBook(r.bookId);
-      const title = book ? book.title : `(book ${r.bookId})`;
-      const author = book ? book.author : "";
+    for (const r of data.reservations) {
+      const book = r.title ? null : await _findBook(r.bookId);
+      const title = r.title || (book ? book.title : `(book ${r.bookId})`);
+      const author = r.author || (book ? book.author : "");
       html += `
         <tr>
           <td>${escapeHTML(r.reservationId)}</td>
@@ -154,7 +154,7 @@
             </button>
           </td>
         </tr>`;
-    });
+    }
     html += `</tbody></table>`;
     host.innerHTML = html;
     decorateResponsiveTables();
@@ -173,14 +173,14 @@
    * @returns {void}
    * @spec    RV02 / RF-08
    */
-  function _onCancel(reservationId) {
+  async function _onCancel(reservationId) {
     if (!confirm(`予約 ${reservationId} をキャンセルしてよろしいですか？`)) return;
-    const r = Service.cancelReservation(reservationId);
+    const r = await Service.cancelReservation(reservationId);
     if (r.success) {
       showMessage("success", r.message);
       // 再描画
-      const data = Service.getDashboard(Service.getSession().userId);
-      _renderSummary(data); _renderList(data);
+      const data = await Service.getDashboard(Service.getSession().userId);
+      _renderSummary(data); await _renderList(data);
     } else {
       showMessage("error", r.message);
     }
@@ -196,9 +196,9 @@
    * @returns {Object|null}
    * @spec    RF-04 / SR02 / 改訂対象 B-9
    */
-  function _findBook(bookId) {
+  async function _findBook(bookId) {
     if (window.Service && typeof Service.getBookById === "function") {
-      return Service.getBookById(bookId);
+      return await Service.getBookById(bookId);
     }
     // フォールバック（Service 未読込時のみ）
     try {

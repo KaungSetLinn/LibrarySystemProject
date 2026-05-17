@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Reference test. The assertions document the expected behavior for configuration, API paths, and UI flows.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: test-v306-reference/test-sqlite-adapter.js
+ * 責務: v3.0.6 参照テスト。過去不具合の再発防止と仕様トレーサビリティ確認を担当する。
+ * 保守メモ: 実装修正時は、ここにある期待値と画面/API 契約がズレていないか確認する。
  */
 /*
  * =============================================================================

@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Seed data for local/demo data sources. Category and availability values here must match search UI assumptions.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/library-seed.js
+ * 責務: デモ・初期化用の seed データ。書籍、利用者、予約などの初期状態を提供する。
+ * 保守メモ: 検索条件の選択肢は category 値と完全一致する必要がある。分類名を変える場合は画面側の選択肢も同期する。
  */
 /*
  * ----------------------------------------------------------------------------

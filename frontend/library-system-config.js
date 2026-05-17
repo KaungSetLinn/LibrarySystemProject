@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Runtime configuration fallback. Keep values declarative and consistent with library-system-config.txt.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/library-system-config.js
+ * 責務: ブラウザ側設定値。txt 設定が読めない場合の fallback として動作する。
+ * 保守メモ: SSOT は library-system-config.txt。設定を増やす場合は txt/js/fallback の差分検出も更新する。
  */
 /*
  * =============================================================================
@@ -42,8 +42,8 @@
  */
 window.LIBRARY_CONFIG_FILE_JS = Object.freeze({
   // バックエンド切替(統合パッケージ追加)
-  // MAIN = library-backend (カゥン氏正本 /api/users/*)
-  // TEST = library-Tbackend (豊田テスト /api/v1/*)
+  // MAIN = library-backend (カゥン氏正本 /api/v1/*)
+  // TEST = library-Tbackend (豊田テスト /api/* + /api/v1/health)
   backendMode: "MAIN",
 
   // データソース種別

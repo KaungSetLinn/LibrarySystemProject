@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Builds advanced-search criteria and stores them for the results screen. UI option values must match the searchable category values used by every data source.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/screens/screen-advanced-search.js
+ * 責務: 画面コントローラ。DOMイベント、Service呼び出し、画面描画の境界を担当する。
+ * 保守メモ: 画面固有の入力値は Service 層で正規化される前提なので、ここでは「どの値を渡すか」が重要。
  */
 /*
  * =============================================================================
@@ -60,13 +60,9 @@
             </div>
             <div class="form-row">
               <label for="category">分類</label>
+              <!-- 分類値は books.category と完全一致させる。init() で DataSource から実値を取得して生成する。 -->
               <select id="category">
-                <option value="">（指定なし）</option>
-                <option>文学</option>
-                <option>科学</option>
-                <option>技術</option>
-                <option>歴史</option>
-                <option>その他</option>
+                <option value="">分類を読み込み中...</option>
               </select>
             </div>
             <div class="form-row">
@@ -100,17 +96,18 @@
    * @returns {void}
    * @spec    G03 / SR01
    */
-  function init() {
+  async function init() {
     if (!requireSession()) return;
 
     const form = document.getElementById("searchForm");
     if (!form) return;
 
-    // 既存条件の復元（戻る動線対応）
+    // 既存条件の復元（戻る動線対応）。分類は選択肢生成後に value を戻す。
     const saved = JSON.parse(sessionStorage.getItem("lib-search-criteria") || "{}");
+    await _populateCategoryOptions(saved.category || "");
+
     if (saved.title)          document.getElementById("title").value          = saved.title;
     if (saved.author)         document.getElementById("author").value         = saved.author;
-    if (saved.category)       document.getElementById("category").value       = saved.category;
     if (saved.sort)           document.getElementById("sort").value           = saved.sort;
     if (saved.availableOnly)  document.getElementById("availableOnly").checked  = true;
     if (saved.reservableOnly) document.getElementById("reservableOnly").checked = true;
@@ -118,19 +115,15 @@
     // ----------------------------------------------------------------
     // クリアボタン
     // ★ v3.0.1 修正（BUG-21）★ 規約 LL-09 適用
-    //   form.reset() は <select id="sort"> も先頭値に戻す。
-    //   reset 後に sort の明示初期値（"bookId"）を明示再代入し、
-    //   sessionStorage もクリア、a11y 通知も出す。
     // ----------------------------------------------------------------
     form.querySelector("[data-clear-search]").addEventListener("click", () => {
       form.reset();
-      // (1) sort セレクトの明示初期値を再代入（BUG-21）
       const sortSel = document.getElementById("sort");
       if (sortSel) sortSel.value = "bookId";
-      // (2) sessionStorage をクリアし、「条件復元」との乖離を防ぐ
+      const categorySel = document.getElementById("category");
+      if (categorySel) categorySel.value = "";
       sessionStorage.removeItem("lib-search-criteria");
       clearMessage();
-      // (3) クリア完了を a11y 通知
       if (typeof showMessage === "function") {
         showMessage("info", "検索条件をクリアしました。");
       }
@@ -150,6 +143,27 @@
       Router.navigate("search-results");
     });
   }
+
+  async function _populateCategoryOptions(selectedValue) {
+    const select = document.getElementById("category");
+    if (!select) return;
+    const categories = await Service.getCategories();
+    const uniqueCategories = Array.from(new Set((categories || [])
+      .map(c => String(c || "").trim())
+      .filter(Boolean))).sort((a, b) => a.localeCompare(b, "ja"));
+
+    const options = ['<option value="">（指定なし）</option>']
+      .concat(uniqueCategories.map(c =>
+        `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`));
+    select.innerHTML = options.join("");
+
+    // 保存済み条件が分類マスタに残っている時だけ復元する。
+    // 存在しない旧分類（文学・科学など）は空に戻し、0件検索を避ける。
+    select.value = uniqueCategories.includes(String(selectedValue || ""))
+      ? String(selectedValue)
+      : "";
+  }
+
 
   Router.register("advanced-search", {
     title: "詳細検索",

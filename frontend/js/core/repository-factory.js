@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Chooses the active repository implementation. Availability checks here decide which data source contract the service layer receives.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/core/repository-factory.js
+ * 責務: フロントエンド共通基盤。設定、ルーティング、サービス境界、ログ、UI共通処理を担当する。
+ * 保守メモ: 画面層とデータソース層を結合しすぎないこと。非同期 API を導入する場合は Service 契約を先に揃える。
  */
 /*
  * =============================================================================
@@ -48,13 +48,13 @@ const RepositoryFactory = (() => {
     const dbType = (window.ConfigManager && ConfigManager.get("dbType")) || "Excel";
 
     if (dbType === "SQLite") {
-      // (1) sql.js 本実装が初期化完了していれば最優先
-      if (window.SQLiteAdapter && typeof SQLiteAdapter.isReady === "function" && SQLiteAdapter.isReady()) {
-        return window.SQLiteAdapter;
-      }
-      // (2) server/ が疎通できていれば ApiAdapter
+      // (1) 統合起動では backendMode に応じた HTTP API を最優先する。
       if (window.ApiAdapter && typeof ApiAdapter.isAvailable === "function" && ApiAdapter.isAvailable()) {
         return window.ApiAdapter;
+      }
+      // (2) サーバが無い環境では sql.js 本実装にフォールバックする。
+      if (window.SQLiteAdapter && typeof SQLiteAdapter.isReady === "function" && SQLiteAdapter.isReady()) {
+        return window.SQLiteAdapter;
       }
       // (3) 旧 Stub（互換維持）
       if (window.SQLiteStubAdapter) {

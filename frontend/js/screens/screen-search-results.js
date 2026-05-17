@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Renders normalized search results. The reservation button is enabled only when each row exposes a true canReserve value.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/screens/screen-search-results.js
+ * 責務: 画面コントローラ。DOMイベント、Service呼び出し、画面描画の境界を担当する。
+ * 保守メモ: 画面固有の入力値は Service 層で正規化される前提なので、ここでは「どの値を渡すか」が重要。
  */
 /*
  * =============================================================================
@@ -68,13 +68,13 @@
    * @returns {void}
    * @spec    G04
    */
-  function init() {
+  async function init() {
     if (!requireSession()) return;
 
     _currentCriteria = JSON.parse(sessionStorage.getItem("lib-search-criteria") || "{}");
     _currentPage = 0;
     _renderCriteriaSummary(_currentCriteria);
-    _runSearch();
+    await _runSearch();
   }
 
   /**
@@ -100,9 +100,9 @@
    * @returns {void}
    * @spec    SR02 / SR03
    */
-  function _runSearch() {
+  async function _runSearch() {
     clearMessage();
-    const result = Service.searchBooks(
+    const result = await Service.searchBooks(
       _currentCriteria, _currentPage, ConfigManager.get("searchPageSize"));
     if (result.result === "error") {
       showMessage("warn", result.message + " 詳細検索画面で条件を入力してください。");
@@ -152,6 +152,7 @@
           <td>${escapeHTML(b.category || "")}</td>
           <td>${renderActionStateBadge(b.actionState, b.status)}</td>
           <td>
+            <!-- canReserve が未定義だと disabled になるため、Repository/API は必ず boolean を返す。 -->
             <button class="btn btn-primary btn-sm"
                     data-reserve-id="${escapeHTML(b.bookId)}"
                     ${b.canReserve ? "" : "disabled"}>
@@ -176,12 +177,12 @@
    * @param {string} bookId
    * @spec   RV03 / RF-07 / 議事録 P4-07
    */
-  function _onReserve(bookId) {
+  async function _onReserve(bookId) {
     if (!confirm(`書籍 ${bookId} を予約してよろしいですか？`)) return;
-    const r = Service.reserveBook(bookId);
+    const r = await Service.reserveBook(bookId);
     if (r.success) {
       showMessage("success", r.message);
-      _runSearch(); // 状態を反映するため再描画
+      await _runSearch(); // 状態を反映するため再描画
     } else {
       showMessage("error", r.message);
     }

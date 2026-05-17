@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Displays and updates notifications. Treat read-state changes as state transitions, not as display-only actions.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/screens/screen-notification.js
+ * 責務: 画面コントローラ。DOMイベント、Service呼び出し、画面描画の境界を担当する。
+ * 保守メモ: 画面固有の入力値は Service 層で正規化される前提なので、ここでは「どの値を渡すか」が重要。
  */
 /*
  * =============================================================================
@@ -65,9 +65,9 @@
    * @returns {void}
    * @spec    G05 / RF-09
    */
-  function init() {
+  async function init() {
     if (!requireSession()) return;
-    _refresh();
+    await _refresh();
   }
 
   /**
@@ -75,8 +75,8 @@
    * 概要 : 通知一覧を取得し直して再描画する。
    * @returns {void}
    */
-  function _refresh() {
-    const list = Service.getNotifications();
+  async function _refresh() {
+    const list = await Service.getNotifications();
     _renderList(list);
     _renderUnreadCount(list);
   }
@@ -123,7 +123,7 @@
             <strong>${escapeHTML(n.title || "")}</strong>
             <time class="muted">${escapeHTML(formatDateTime(n.createdAt))}</time>
           </div>
-          <div class="notif-body">${escapeHTML(n.body || "")}</div>
+          <div class="notif-body">${escapeHTML(n.body || n.message || "")}</div>
         </li>`;
     });
     html += `</ul>`;
@@ -153,9 +153,9 @@
    * @returns {void}
    * @spec    BUG-V2.0 / 議事録 P5-07
    */
-  function _onClick(notificationId, li) {
+  async function _onClick(notificationId, li) {
     if (li.classList.contains("is-read")) return;
-    const ok = Service.markNotificationRead(notificationId);
+    const ok = await Service.markNotificationRead(notificationId);
     if (!ok) {
       showMessage("error", "既読化に失敗しました。再度お試しください。");
       return;
@@ -166,7 +166,7 @@
     li.setAttribute("aria-label",
       "既読: " + (li.querySelector("strong")?.textContent || ""));
     // 未読件数の再計算
-    _refresh();
+    await _refresh();
   }
 
   Router.register("notification", {

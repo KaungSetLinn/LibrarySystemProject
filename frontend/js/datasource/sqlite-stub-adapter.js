@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Fallback repository for environments without SQLite. Keep behavior close to the real adapter for tests and demos.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/datasource/sqlite-stub-adapter.js
+ * 責務: IRepository 契約の実装。Excel/localStorage、SQLite、HTTP API などの保存先差分を吸収する。
+ * 保守メモ: 戻り値形式を画面が期待する ViewModel に正規化すること。特に actionState/canReserve は予約ボタン制御に直結する。
  */
 /*
  * =============================================================================
@@ -104,6 +104,9 @@ const SQLiteStubAdapter = (() => {
     /** @spec RF-05/06 / SR02 */
     searchBooks(criteria) {
       const a = _excel(); return a ? a.searchBooks(criteria) : [];
+    },
+    getCategories() {
+      const a = _excel(); return a && typeof a.getCategories === "function" ? a.getCategories() : [];
     },
 
     // ----- 予約 / 取消（書込系：スタブタグを付与） -----
