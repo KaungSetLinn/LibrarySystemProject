@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Centralized logging facade. Screens should not depend on a concrete console or server logger.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/core/logger.js
  * 概要       : 共通ロガー（Logger）。console 直撃を全廃し、レベル制御可能な

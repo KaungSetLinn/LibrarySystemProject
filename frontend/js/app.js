@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Reviewed source file. Comments describe intent, boundaries, and risk areas rather than restating syntax.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/app.js
  * 概要       : 図書予約システム v3.0 SPA 起動エントリ。

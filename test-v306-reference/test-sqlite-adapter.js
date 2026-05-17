@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Reference test. The assertions document the expected behavior for configuration, API paths, and UI flows.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : test/test-sqlite-adapter.js
  * 概要       : SQLiteAdapter（sql.js 本実装）の検証テスト。

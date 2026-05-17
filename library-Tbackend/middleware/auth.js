@@ -1,3 +1,9 @@
+/*
+ * Readable-code review note:
+ * - Role: Authentication middleware for the test backend. Keep session checks small and auditable.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
 exports.requireLogin = (req, res, next) => {
     if (!req.session.user) {
 

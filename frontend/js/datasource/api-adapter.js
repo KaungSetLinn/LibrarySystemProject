@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: HTTP repository adapter. It must normalize backend responses into the same contract as local repositories.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : app/js/datasource/api-adapter.js
  * 概要       : ApiAdapter(HTTP 委譲アダプタ)。

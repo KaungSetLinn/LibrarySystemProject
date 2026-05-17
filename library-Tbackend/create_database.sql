@@ -1,3 +1,7 @@
+-- Readable-code review note:
+-- - Role: Reference SQL schema. Keep this aligned with Sequelize migrations and model definitions.
+-- - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+-- - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
 CREATE TABLE books (
     bookId INTEGER NOT NULL PRIMARY KEY,
     title TEXT NOT NULL,

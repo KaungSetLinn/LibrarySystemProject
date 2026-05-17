@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Repository contract and shared data-source definitions. Changes here affect every storage adapter.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/datasource/data-source.js
  * 概要       : DataSource（IRepository）契約の定義と検証ユーティリティ。

@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Builds advanced-search criteria and stores them for the results screen. UI option values must match the searchable category values used by every data source.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/screens/screen-advanced-search.js
  * 概要       : G03 詳細検索画面（SPA ビュー + コントローラ）。

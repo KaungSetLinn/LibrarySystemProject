@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Single source of truth for runtime configuration. Parser changes must stay compatible with generated fallback config.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/core/config-manager.js
  * 概要       : 設定管理モジュール(ConfigManager)。

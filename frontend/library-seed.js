@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Seed data for local/demo data sources. Category and availability values here must match search UI assumptions.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * ----------------------------------------------------------------------------
  * ファイル名   : library-seed.js
  * 概要         : 図書予約システムの初期投入データ。

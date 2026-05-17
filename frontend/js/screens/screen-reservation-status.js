@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Displays active reservations and cancellation actions. Keep reservation state labels consistent with repository responses.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/screens/screen-reservation-status.js
  * 概要       : G02 予約状況画面（SPA ビュー + コントローラ）。

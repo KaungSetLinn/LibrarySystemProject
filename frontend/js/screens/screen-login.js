@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Handles authentication flow and session setup. Keep validation and session writes separated from rendering concerns.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/screens/screen-login.js
  * 概要       : G01 ログイン画面（SPA ビュー + コントローラ）。

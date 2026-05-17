@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Displays aggregated user data. Keep backend shape normalization outside of view-only formatting code.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/screens/screen-mypage.js
  * 概要       : G06 マイページ画面（SPA ビュー + コントローラ）。

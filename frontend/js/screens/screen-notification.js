@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Displays and updates notifications. Treat read-state changes as state transitions, not as display-only actions.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/screens/screen-notification.js
  * 概要       : G05 通知画面（SPA ビュー + コントローラ）。

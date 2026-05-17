@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Local/Excel-style repository adapter. Keep search and reservation rules aligned with backend semantics.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/datasource/excel-adapter.js
  * 概要       : ExcelAdapter（RP02 ExcelRepository 実装）。

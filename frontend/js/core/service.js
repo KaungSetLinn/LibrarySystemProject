@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Business-service boundary. It normalizes input and should hide repository details from UI screens.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : js/core/service.js
  * 概要       : 業務サービス層（Service）。Screen と Repository を仲介する。

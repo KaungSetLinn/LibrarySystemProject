@@ -1,4 +1,10 @@
 /*
+ * Readable-code review note:
+ * - Role: Runtime configuration fallback. Keep values declarative and consistent with library-system-config.txt.
+ * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
+ * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ */
+/*
  * =============================================================================
  * ファイル名 : library-system-config.js
  * 概要       : 図書予約システム v3.0.6 設定ファイル(JS 形式 fallback)。
