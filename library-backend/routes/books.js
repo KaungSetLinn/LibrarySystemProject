@@ -26,6 +26,19 @@ const bookController = require('../controllers/bookController');
  */
 router.get('/search', bookController.searchBooks);
 
+
+/*
+ * GET /api/v1/books/categories  (API-04c)
+ *
+ * books.category の実値から分類一覧を返します。
+ * G03 詳細検索画面の分類プルダウン生成用。
+ *
+ * レスポンス:
+ *   200 OK  - { result, messageCode, message, data: { categories: string[] } }
+ *   500     - DB例外発生時（E10）
+ */
+router.get('/categories', bookController.getCategories);
+
 /*
  * GET /api/v1/books/:bookId  (API-04b)
  *
