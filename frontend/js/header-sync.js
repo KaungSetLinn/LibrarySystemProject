@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Reviewed source file. Comments describe intent, boundaries, and risk areas rather than restating syntax.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/header-sync.js
+ * 責務: プロジェクト固有コード。上位処理と下位処理の境界を意識して保守する。
+ * 保守メモ: このコメントは処理内容ではなく、保守時に誤りやすい責務境界を明示する。
  */
 /*
  * =============================================================================

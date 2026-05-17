@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Selects the backend process from configuration and delegates execution. Keep parsing rules aligned with frontend configuration files.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: start.js
+ * 責務: 統合起動エントリ。設定ファイルから backendMode を読み取り MAIN/TEST backend を起動する。
+ * 保守メモ: 設定ファイルの形式は key=value。パーサとコメントの契約がズレると常に MAIN 起動になる。
  */
 /*
  * =============================================================================
@@ -41,11 +41,18 @@ function readBackendMode() {
         const lines = text.split(/\r?\n/);
         for (const line of lines) {
             const trimmed = line.trim();
-            if (!trimmed || trimmed.startsWith('#')) continue;
-            const idx = trimmed.indexOf(',');
-            if (idx === -1) continue;
-            const key = trimmed.slice(0, idx).trim();
-            const val = trimmed.slice(idx + 1).trim().toUpperCase();
+            if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) continue;
+
+            // library-system-config.txt の正式仕様は key=value。
+            // 過去版の key,value も読み取れるようにし、起動スクリプトだけ
+            // MAIN 固定になる事故を防ぐ。
+            const separatorIndex = trimmed.includes('=')
+                ? trimmed.indexOf('=')
+                : trimmed.indexOf(',');
+            if (separatorIndex === -1) continue;
+
+            const key = trimmed.slice(0, separatorIndex).trim();
+            const val = trimmed.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, '').toUpperCase();
             if (key === 'backendMode') {
                 if (val === 'MAIN' || val === 'TEST') return val;
                 console.warn(`[start.js] 不正な backendMode=${val}、MAIN として扱います。`);

@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Business-service boundary. It normalizes input and should hide repository details from UI screens.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/core/service.js
+ * 責務: フロントエンド共通基盤。設定、ルーティング、サービス境界、ログ、UI共通処理を担当する。
+ * 保守メモ: 画面層とデータソース層を結合しすぎないこと。非同期 API を導入する場合は Service 契約を先に揃える。
  */
 /*
  * =============================================================================
@@ -34,102 +34,118 @@
 
 const Service = (() => {
 
-  /**
-   * SESSION_KEY
-   * セッション格納キー（sessionStorage）。
-   * ※index.html の判定とも完全一致させること（変更時は両方更新）。
-   */
   const SESSION_KEY = "lib-session";
 
-  /**
-   * _repo
-   * 概要 : 現在の dbType に応じた Repository を取得する。
-   *        毎呼出でファクトリから取得することで、実行時切替（setDbType）にも追従。
-   *
-   * @returns {Object} ExcelAdapter | SQLiteStubAdapter
-   * @spec    内部仕様 CF03
-   */
-  function _repo() { return RepositoryFactory.create(); }
+  function _repo() {
+    return (window.RepositoryFactory && RepositoryFactory.create()) || null;
+  }
 
-  /**
-   * makeOk
-   * 概要 : 成功 ServiceResult を生成するラッパー（議事録 P4-05）。
-   *
-   * @param {string} messageCode
-   * @param {string} message
-   * @param {Object} [payload]
-   * @returns {ServiceResult}
-   */
   function makeOk(messageCode, message, payload) {
     return { success: true, messageCode, message, payload: payload || {} };
   }
 
-  /**
-   * makeErr
-   * 概要 : 失敗 ServiceResult を生成するラッパー（議事録 P4-05）。
-   *
-   * @param {string} messageCode
-   * @param {string} message
-   * @returns {ServiceResult}
-   */
   function makeErr(messageCode, message) {
     return { success: false, messageCode, message };
   }
 
+  function _isPromiseLike(value) {
+    return value && typeof value.then === "function";
+  }
+
+  async function _callRepo(methodName, args, fallbackValue) {
+    const repo = _repo();
+    if (!repo || typeof repo[methodName] !== "function") return fallbackValue;
+    try {
+      return await repo[methodName].apply(repo, args || []);
+    } catch (e) {
+      if (window.Logger) Logger.error("Service." + methodName, e.message, { stack: e.stack });
+      return fallbackValue;
+    }
+  }
+
+  function _toServiceResult(raw, okMessage, errMessage) {
+    if (!raw) return makeErr("E10", errMessage || "処理に失敗しました。");
+    if (raw.success === true) {
+      return raw;
+    }
+    if (raw.success === false) {
+      return makeErr(raw.messageCode || "E10", raw.message || errMessage || "処理に失敗しました。");
+    }
+    if (raw.ok === true) {
+      return makeOk(raw.messageCode || "I00", raw.message || okMessage || "処理しました。", raw.data || raw.payload || {});
+    }
+    if (raw.ok === false) {
+      return makeErr(raw.messageCode || "E10", raw.message || errMessage || "処理に失敗しました。");
+    }
+    if (raw.result === "success") {
+      return makeOk(raw.messageCode || "I00", raw.message || okMessage || "処理しました。", raw.data || {});
+    }
+    if (raw.result === "error") {
+      return makeErr(raw.messageCode || "E10", raw.message || errMessage || "処理に失敗しました。");
+    }
+    return makeOk(raw.messageCode || "I00", raw.message || okMessage || "処理しました。", raw.data || raw.payload || raw);
+  }
+
+  function _asArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function _buildMyPageSummary(data) {
+    const currentReservations = _asArray(data.currentReservations);
+    const history = _asArray(data.history);
+    const favorites = _asArray(data.favorites);
+    const notifications = _asArray(data.notifications);
+    const summary = data.summary || {};
+    return Object.assign({}, data, {
+      currentReservations,
+      history,
+      favorites,
+      notifications,
+      summary: {
+        reservationCount: Number.isFinite(Number(summary.reservationCount))
+          ? Number(summary.reservationCount) : currentReservations.length,
+        historyCount: Number.isFinite(Number(summary.historyCount))
+          ? Number(summary.historyCount) : history.length,
+        favoritesCount: Number.isFinite(Number(summary.favoritesCount))
+          ? Number(summary.favoritesCount) : favorites.length,
+        unreadNotifCount: Number.isFinite(Number(summary.unreadNotifCount))
+          ? Number(summary.unreadNotifCount) : notifications.filter(n => !n.isRead).length
+      }
+    });
+  }
+
   /* ============== セッション管理（RF-01 / RF-02 / API-01） ============== */
 
-  /**
-   * authenticate（API-01: POST /api/v1/auth/login）
-   * 概要 : 利用者IDと利用者名で認証する。成功時セッションを発行。
-   *
-   * @param {string} userId
-   * @param {string} userName
-   * @returns {ServiceResult & {user?: Object}}
-   * @spec    AU01 / RF-01 / API-01
-   *
-   * @example
-   *   const r = Service.authenticate("1", "佐藤翔太");
-   *   if (r.success) navigate("reservation-status");
-   */
-  function authenticate(userId, userName) {
+  async function authenticate(userId, userName) {
     const sUid = String(userId  || "").trim();
     const sNam = String(userName || "").trim();
     if (!sUid || !sNam) {
       return makeErr("E01", "利用者ID と利用者名を入力してください。");
     }
-    const user = _repo().findUser(sUid, sNam);
+
+    const user = await _callRepo("findUser", [sUid, sNam], null);
     if (!user) {
-      _repo().writeAuditLog("LOGIN_FAILED", "WARN", sUid, "認証失敗");
+      await _callRepo("writeAuditLog", ["LOGIN_FAILED", "WARN", sUid, "認証失敗"], undefined);
       return makeErr("W01", "利用者IDまたは利用者名が一致しません。");
     }
+
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({
       userId:   String(user.userId),
       userName: user.userName,
       loginAt:  new Date().toISOString()
     }));
-    _repo().writeAuditLog("LOGIN_SUCCESS", "INFO", user.userId, "ログイン成功");
+    await _callRepo("writeAuditLog", ["LOGIN_SUCCESS", "INFO", user.userId, "ログイン成功"], undefined);
     if (window.Logger) Logger.info("Service.authenticate", "ログイン成功", { userId: sUid });
     const r = makeOk("I01", "ログインしました。", { user });
     r.user = user;
     return r;
   }
 
-  /**
-   * getSession
-   * 概要 : 現在のセッションを取得する。
-   *        ★ BUG-09 / P4-12 反映 ★
-   *        loginAt から sessionTimeoutMinutes を超過していたら null を返す。
-   *
-   * @returns {Object|null}
-   * @spec    BUG-09 / 議事録 P4-12
-   */
   function getSession() {
     try {
       const s = JSON.parse(sessionStorage.getItem(SESSION_KEY));
       if (!s || !s.userId) return null;
-
-      // セッション期限チェック（30分）
-      const timeoutMin = (window.ConfigManager && ConfigManager.get("sessionTimeoutMinutes")) || 30;
+      const timeoutMin = (window.ConfigManager && Number(ConfigManager.get("sessionTimeoutMinutes"))) || 30;
       const loginAt = new Date(s.loginAt).getTime();
       const ageMin = (Date.now() - loginAt) / 60000;
       if (ageMin > timeoutMin) {
@@ -141,36 +157,23 @@ const Service = (() => {
     } catch { return null; }
   }
 
-  /**
-   * logout
-   * 概要 : ログアウト処理。セッションと関連 sessionStorage をクリアする。
-   *
-   * @returns {void}
-   * @spec    RF-02
-   */
-  function logout() {
+  async function logout() {
     const s = getSession();
-    if (s) _repo().writeAuditLog("LOGOUT", "INFO", s.userId, "ログアウト");
+
+    // 呼び出し側が await しない場合でも、画面上のログアウト状態は即時に反映する。
     sessionStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem("lib-last-action");
     sessionStorage.removeItem("lib-search-criteria");
+
+    if (s) await _callRepo("writeAuditLog", ["LOGOUT", "INFO", s.userId, "ログアウト"], undefined);
     if (window.Logger) Logger.info("Service.logout", "ログアウト完了");
   }
 
   /* ============== 予約状況（RV01 / API-02） ============== */
 
-  /**
-   * getDashboard
-   * 概要 : 予約状況画面 G02 用の集計データを返す。
-   *
-   * @param {string} userId
-   * @returns {{reservations:Array, count:number, maxRes:number, remaining:number,
-   *            nextDeadline:string|null, reservedCount:number, waitingCount:number}}
-   * @spec    RV01 / RF-03
-   */
-  function getDashboard(userId) {
+  async function getDashboard(userId) {
     const maxRes = (window.ConfigManager && Number(ConfigManager.get("maxReservations"))) || 3;
-    const reservations = _repo().getActiveReservations(userId);
+    const reservations = _asArray(await _callRepo("getActiveReservations", [userId], []));
     const count = reservations.length;
     const remaining = Math.max(0, maxRes - count);
     const nextDeadline = reservations
@@ -183,14 +186,6 @@ const Service = (() => {
 
   /* ============== 検索（SR01〜SR04 / API-03） ============== */
 
-  /**
-   * normalizeSearchCriteria
-   * 概要 : 入力検索条件を正規化する（trim, 既定値補完, viewer 注入）。
-   *
-   * @param {Object} raw 生入力
-   * @returns {SearchCriteria}
-   * @spec    SR01
-   */
   function normalizeSearchCriteria(raw) {
     return {
       title:          String(raw.title    || "").trim(),
@@ -203,26 +198,16 @@ const Service = (() => {
     };
   }
 
-  /**
-   * _isAllEmpty
-   * 概要 : 検索条件が全空（W16 判定用）。
-   * @param {SearchCriteria} c
-   * @returns {boolean}
-   */
   function _isAllEmpty(c) { return !c.title && !c.author && !c.category; }
 
-  /**
-   * searchBooks（API-03）
-   * 概要 : 書籍検索を実行し、外部仕様 §7.2 形式で結果を返す。
-   *        全空検索（フラグも未指定）は W16（議事録 P1-09 / BUG-04 反映）。
-   *
-   * @param {Object} rawCriteria
-   * @param {number} [page]
-   * @param {number} [pageSize]
-   * @returns {SearchResponse}
-   * @spec    SR02 + SR03 / RF-05/06 / TC-SRH-04
-   */
-  function searchBooks(rawCriteria, page, pageSize) {
+  function _applyClientSideResultFilters(books, criteria) {
+    let result = _asArray(books);
+    if (criteria.availableOnly)  result = result.filter(v => v.actionState === "AVAILABLE");
+    if (criteria.reservableOnly) result = result.filter(v => v.canReserve === true);
+    return result;
+  }
+
+  async function searchBooks(rawCriteria, page, pageSize) {
     const criteria = normalizeSearchCriteria(rawCriteria || {});
     const cfgPageSize = (window.ConfigManager && Number(ConfigManager.get("searchPageSize"))) || 10;
     const pSize = Number.isFinite(Number(pageSize)) && Number(pageSize) > 0
@@ -238,105 +223,130 @@ const Service = (() => {
       };
     }
 
-    const all = _repo().searchBooks(criteria);
+    const repoCriteria = Object.assign({}, criteria, { page: pNum, pageSize: pSize });
+    const raw = await _callRepo("searchBooks", [repoCriteria], []);
+
+    if (raw && raw.result === "error") {
+      return {
+        result: "error",
+        messageCode: raw.messageCode || "E10",
+        message: raw.message || "検索に失敗しました。",
+        count: 0, page: 0, pageSize: pSize, totalPages: 1, books: []
+      };
+    }
+
+    // HTTP API アダプタはサーバ側ページング済み SearchResponse を返す。
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.books)) {
+      const books = raw.books;
+      const count = Number.isFinite(Number(raw.count)) ? Number(raw.count) : books.length;
+      const totalPages = Number.isFinite(Number(raw.totalPages)) && Number(raw.totalPages) > 0
+        ? Number(raw.totalPages) : Math.max(1, Math.ceil(count / pSize));
+      const safePage = Math.max(0, Math.min(Number(raw.page) || 0, totalPages - 1));
+      await _callRepo("writeAuditLog", ["SEARCH", "INFO", (getSession() || {}).userId || "(anon)",
+        `count=${count} page=${safePage} title=${criteria.title} author=${criteria.author}`], undefined);
+      return { result: "success", count, page: safePage,
+               pageSize: Number(raw.pageSize) || pSize, totalPages, books };
+    }
+
+    const all = _applyClientSideResultFilters(raw, criteria);
     const count = all.length;
     const totalPages = Math.max(1, Math.ceil(count / pSize));
     const safePage = Math.max(0, Math.min(pNum, totalPages - 1));
     const books = all.slice(safePage * pSize, (safePage + 1) * pSize);
 
-    _repo().writeAuditLog("SEARCH", "INFO", (getSession() || {}).userId || "(anon)",
-      `count=${count} page=${safePage} title=${criteria.title} author=${criteria.author}`);
+    await _callRepo("writeAuditLog", ["SEARCH", "INFO", (getSession() || {}).userId || "(anon)",
+      `count=${count} page=${safePage} title=${criteria.title} author=${criteria.author}`], undefined);
 
     return { result: "success", count, page: safePage, pageSize: pSize, totalPages, books };
   }
 
-  /* ============== 予約 / 取消（API-04 / API-05） ============== */
-
-  /**
-   * reserveBook
-   * @param {string} bookId
-   * @returns {ReservationResult}
-   * @spec    RV03 / RF-07
-   */
-  function reserveBook(bookId) {
-    const s = getSession();
-    if (!s) return makeErr("E09", "セッションが切れています。再ログインしてください。");
-    return _repo().reserveBook(s.userId, bookId);
+  async function getCategories() {
+    const categories = await _callRepo("getCategories", [], null);
+    if (Array.isArray(categories) && categories.length) return categories;
+    // リポジトリが未対応の場合でも詳細検索が機能するよう、seed/DB で使う分類値を既定値にする。
+    return ["文芸", "情報科学", "生活", "法律", "学術", "福祉"];
   }
 
-  /**
-   * cancelReservation
-   * @param {string} reservationId
-   * @returns {ServiceResult}
-   * @spec    RV02 / RF-08
-   */
-  function cancelReservation(reservationId) {
+  /* ============== 予約 / 取消（API-04 / API-05） ============== */
+
+  async function reserveBook(bookId) {
     const s = getSession();
     if (!s) return makeErr("E09", "セッションが切れています。再ログインしてください。");
-    return _repo().cancelReservation(s.userId, reservationId);
+    const raw = await _callRepo("reserveBook", [s.userId, bookId], null);
+    return _toServiceResult(raw, "予約しました。", "予約処理に失敗しました。");
+  }
+
+  async function cancelReservation(reservationId) {
+    const s = getSession();
+    if (!s) return makeErr("E09", "セッションが切れています。再ログインしてください。");
+    const raw = await _callRepo("cancelReservation", [s.userId, reservationId], null);
+    return _toServiceResult(raw, "予約をキャンセルしました。", "取消処理に失敗しました。");
   }
 
   /* ============== マイページ / 通知 / お気に入り（API-06） ============== */
 
-  /** @spec MP01 / RF-10 */
-  function getMyPageData() {
+  async function getMyPageData() {
     const s = getSession();
-    if (!s) return { currentReservations: [], history: [], favorites: [], notifications: [],
-      summary: { reservationCount: 0, historyCount: 0, favoritesCount: 0, unreadNotifCount: 0 } };
-    return _repo().getMyPageData(s.userId);
+    if (!s) {
+      return _buildMyPageSummary({ currentReservations: [], history: [], favorites: [], notifications: [] });
+    }
+    const data = await _callRepo("getMyPageData", [s.userId],
+      { currentReservations: [], history: [], favorites: [], notifications: [] });
+    return _buildMyPageSummary(data || {});
   }
 
-  /** @spec RF-09 */
-  function getNotifications() {
-    const s = getSession(); return s ? _repo().getNotifications(s.userId) : [];
+  async function getNotifications() {
+    const s = getSession();
+    return s ? _asArray(await _callRepo("getNotifications", [s.userId], [])) : [];
   }
 
-  /** @spec RF-09 / BUG-V2.0 */
-  function markNotificationRead(notificationId) {
-    const s = getSession(); return s ? _repo().markNotificationRead(s.userId, notificationId) : false;
+  async function markNotificationRead(notificationId) {
+    const s = getSession();
+    if (!s) return false;
+    const raw = await _callRepo("markNotificationRead", [s.userId, notificationId], false);
+    if (raw === true || raw === false) return raw;
+    return raw && (raw.success === true || raw.ok === true || raw.result === "success");
   }
 
-  /** @spec RF-10 */
-  function addFavorite(bookId) {
-    const s = getSession(); return s ? _repo().addFavorite(s.userId, bookId) : false;
+  async function addFavorite(bookId) {
+    const s = getSession();
+    if (!s) return false;
+    const raw = await _callRepo("addFavorite", [s.userId, bookId], false);
+    if (raw === true || raw === false) return raw;
+    return raw && (raw.success === true || raw.ok === true || raw.result === "success");
   }
 
-  /** @spec RF-10 */
-  function removeFavorite(bookId) {
-    const s = getSession(); return s ? _repo().removeFavorite(s.userId, bookId) : false;
+  async function removeFavorite(bookId) {
+    const s = getSession();
+    if (!s) return false;
+    const raw = await _callRepo("removeFavorite", [s.userId, bookId], false);
+    if (raw === true || raw === false) return raw;
+    return raw && (raw.success === true || raw.ok === true || raw.result === "success");
   }
 
   /* ============== ブリッジ・貸出連携（API-07/08/09/10） ============== */
 
-  /** @spec RF-11 / API-08 */
-  function bridgeExport()        { return _repo().exportAll(); }
-  /** @spec RF-11 / API-07 */
-  function bridgeImport(jsonStr) { return _repo().importAll(jsonStr); }
-  /** @spec RF-11 / API-09 */
-  function bridgeReset() {
-    _repo().resetToSeed();
+  async function bridgeExport()        { return await _callRepo("exportAll", [], "{}"); }
+  async function bridgeImport(jsonStr) {
+    const raw = await _callRepo("importAll", [jsonStr], null);
+    return _toServiceResult(raw, "取込が完了しました。", "取込に失敗しました。");
+  }
+  async function bridgeReset() {
+    await _callRepo("resetToSeed", [], undefined);
     return makeOk("I09", "初期データに戻しました。");
   }
-  /** @spec RF-13 / LN01 / API-10 */
-  function handleLoanEvent(ev)   { return _repo().handleLoanEvent(ev); }
+  async function handleLoanEvent(ev) {
+    const raw = await _callRepo("handleLoanEvent", [ev], null);
+    return _toServiceResult(raw, "OK", "貸出連携に失敗しました。");
+  }
 
-  /**
-   * getBookById（v3.0.3 / B-9 新設）
-   * 概要 : Repository 経由で書籍1件を取得する。
-   *        画面層からの localStorage 直接参照を排除するためのアクセッサ。
-   *        将来 SQLite/API 化時もこの関数の差し替えだけで対応可能。
-   *
-   * @param {string|number} bookId
-   * @returns {Object|null}
-   * @spec    RF-04 / SR02 / 改訂対象 B-9
-   */
-  function getBookById(bookId) {
+  async function getBookById(bookId) {
     if (bookId === null || bookId === undefined) return null;
     const repo = _repo();
     if (repo && typeof repo.findBookById === "function") {
-      return repo.findBookById(bookId);
+      const found = await repo.findBookById(bookId);
+      if (found) return found;
     }
-    // フォールバック（既存 ExcelAdapter は findBookById 未実装の可能性あり）
     try {
       const list = JSON.parse(localStorage.getItem("lib-books") || "[]");
       return list.find(b => String(b.bookId) === String(bookId)) || null;
@@ -348,12 +358,12 @@ const Service = (() => {
   return Object.freeze({
     authenticate, getSession, logout,
     getDashboard,
-    normalizeSearchCriteria, searchBooks,
+    normalizeSearchCriteria, searchBooks, getCategories,
     reserveBook, cancelReservation,
     getMyPageData, getNotifications, markNotificationRead,
     addFavorite, removeFavorite,
     bridgeExport, bridgeImport, bridgeReset, handleLoanEvent,
-    getBookById,            // v3.0.3 / B-9 新設
+    getBookById,
     makeOk, makeErr
   });
 })();

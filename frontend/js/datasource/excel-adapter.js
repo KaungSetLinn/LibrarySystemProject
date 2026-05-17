@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Local/Excel-style repository adapter. Keep search and reservation rules aligned with backend semantics.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/datasource/excel-adapter.js
+ * 責務: IRepository 契約の実装。Excel/localStorage、SQLite、HTTP API などの保存先差分を吸収する。
+ * 保守メモ: 戻り値形式を画面が期待する ViewModel に正規化すること。特に actionState/canReserve は予約ボタン制御に直結する。
  */
 /*
  * =============================================================================
@@ -484,7 +484,7 @@ const ExcelAdapter = (() => {
     const loan = _isLoanedOut(book.bookId);
     if (loan.loaned) {
       return { actionState: "ON_LOAN", status: "貸出中",
-               canReserve: false, isDisabled: false, actionLabel: "貸出中（予約不可）",
+               canReserve: true, isDisabled: false, actionLabel: "予約する（貸出中）",
                dueDate: loan.dueDate };
     }
     if (_isReservedBySelf(book.bookId, viewerUserId)) {
@@ -509,6 +509,13 @@ const ExcelAdapter = (() => {
    * @returns {BookViewModel[]} 検索結果（全件、ページングは Service 層）
    * @spec    RF-05/06 / SR02 / 外部仕様 §7.2 / BUG-15 / 議事録 P3-09,15
    */
+  function getCategories() {
+    return Array.from(new Set(_getAll(KEY.BOOKS)
+      .map(b => String(b.category || "").trim())
+      .filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, "ja"));
+  }
+
   function searchBooks(criteria) {
     const c = criteria || {};
     const t = String(c.title || "").trim().toLowerCase();
@@ -1090,7 +1097,7 @@ const ExcelAdapter = (() => {
   return Object.freeze({
     findUser,
     getActiveReservations, getReservationCount,
-    searchBooks,
+    searchBooks, getCategories,
     reserveBook, cancelReservation,
     getMyPageData, getNotifications, markNotificationRead,
     listFavorites, addFavorite, removeFavorite,

@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Handles authentication flow and session setup. Keep validation and session writes separated from rendering concerns.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/screens/screen-login.js
+ * 責務: 画面コントローラ。DOMイベント、Service呼び出し、画面描画の境界を担当する。
+ * 保守メモ: 画面固有の入力値は Service 層で正規化される前提なので、ここでは「どの値を渡すか」が重要。
  */
 /*
  * =============================================================================
@@ -230,8 +230,8 @@
       if (btn) { btn.disabled = true; btn.textContent = "認証中…"; }
 
       // 1tick 遅延で UI 更新が反映される時間を確保
-      setTimeout(() => {
-        const result = Service.authenticate(userId, userName);
+      setTimeout(async () => {
+        const result = await Service.authenticate(userId, userName);
         if (result.success) {
           // セッション切れ表示の残りカスを掃除
           sessionStorage.removeItem("lib-redirect-reason");

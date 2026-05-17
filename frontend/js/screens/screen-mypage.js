@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Displays aggregated user data. Keep backend shape normalization outside of view-only formatting code.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/screens/screen-mypage.js
+ * 責務: 画面コントローラ。DOMイベント、Service呼び出し、画面描画の境界を担当する。
+ * 保守メモ: 画面固有の入力値は Service 層で正規化される前提なので、ここでは「どの値を渡すか」が重要。
  */
 /*
  * =============================================================================
@@ -126,10 +126,10 @@
    * @returns {void}
    * @spec    G06 / MP01
    */
-  function init() {
+  async function init() {
     if (!requireSession()) return;
 
-    _refresh();
+    await _refresh();
     _setupTabs();
     _setupBridge();
   }
@@ -139,9 +139,15 @@
    * 概要 : マイページデータを取得して全パネルを再描画する。
    * @returns {void}
    */
-  function _refresh() {
-    const data = Service.getMyPageData();
-    _renderSummary(data.summary);
+  async function _refresh() {
+    const data = await Service.getMyPageData();
+    const summary = data.summary || {
+      reservationCount: (data.currentReservations || []).length,
+      historyCount: (data.history || []).length,
+      favoritesCount: (data.favorites || []).length,
+      unreadNotifCount: (data.notifications || []).filter(n => !n.isRead).length
+    };
+    _renderSummary(summary);
     _renderReservations(data.currentReservations);
     _renderHistory(data.history);
     _renderFavorites(data.favorites);
@@ -284,10 +290,10 @@
     decorateResponsiveTables();
 
     host.querySelectorAll("[data-fav-remove]").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         if (!confirm("お気に入りから削除してよろしいですか？")) return;
-        const ok = Service.removeFavorite(btn.dataset.favRemove);
-        if (ok) { showMessage("success", "お気に入りから削除しました。"); _refresh(); }
+        const ok = await Service.removeFavorite(btn.dataset.favRemove);
+        if (ok) { showMessage("success", "お気に入りから削除しました。"); await _refresh(); }
         else    { showMessage("error", "削除に失敗しました。"); }
       });
     });
@@ -315,7 +321,7 @@
           <strong>${escapeHTML(n.title || "")}</strong>
           <time class="muted">${escapeHTML(formatDateTime(n.createdAt))}</time>
         </div>
-        <div class="notif-body">${escapeHTML(n.body || "")}</div>
+        <div class="notif-body">${escapeHTML(n.body || n.message || "")}</div>
       </li>`;
     });
     html += `</ul>
@@ -342,8 +348,8 @@
    * _onExport : JSON 出力
    * @spec  RF-11 / API-08
    */
-  function _onExport() {
-    const json = Service.bridgeExport();
+  async function _onExport() {
+    const json = await Service.bridgeExport();
     const blob = new Blob([json], { type: "application/json" });
     const url  = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -363,9 +369,9 @@
     const file = document.getElementById("bridgeImportFile")?.files?.[0];
     if (!file) { showMessage("warn", "JSON ファイルを選択してください。"); return; }
     const reader = new FileReader();
-    reader.onload = () => {
-      const r = Service.bridgeImport(String(reader.result || ""));
-      if (r.success) { showMessage("success", r.message); _refresh(); }
+    reader.onload = async () => {
+      const r = await Service.bridgeImport(String(reader.result || ""));
+      if (r.success) { showMessage("success", r.message); await _refresh(); }
       else           { showMessage("error",   r.message); }
     };
     reader.onerror = () => showMessage("error", "ファイル読込に失敗しました。");
@@ -376,7 +382,7 @@
    * _onReset : 初期データに戻す（★ 二段階確認 ★）
    * @spec  RF-11 / API-09 / BUG-06 / 議事録 P5-04
    */
-  function _onReset() {
+  async function _onReset() {
     // 第1段階：通常 confirm
     if (!confirm("★全データを初期 seed に戻します★ 取り消し不可です。続行しますか？")) return;
     // 第2段階：「INITIALIZE」入力（議事録 BUG-06 / P5-04 反映）
@@ -385,8 +391,8 @@
       showMessage("info", "初期化をキャンセルしました。");
       return;
     }
-    const r = Service.bridgeReset();
-    if (r.success) { showMessage("success", r.message); _refresh(); }
+    const r = await Service.bridgeReset();
+    if (r.success) { showMessage("success", r.message); await _refresh(); }
     else           { showMessage("error",   r.message || "初期化に失敗しました。"); }
   }
 

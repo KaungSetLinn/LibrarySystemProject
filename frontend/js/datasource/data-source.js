@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Repository contract and shared data-source definitions. Changes here affect every storage adapter.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/js/datasource/data-source.js
+ * 責務: IRepository 契約の実装。Excel/localStorage、SQLite、HTTP API などの保存先差分を吸収する。
+ * 保守メモ: 戻り値形式を画面が期待する ViewModel に正規化すること。特に actionState/canReserve は予約ボタン制御に直結する。
  */
 /*
  * =============================================================================
@@ -99,6 +99,7 @@ const IREPOSITORY_CONTRACT = Object.freeze([
   { name: "getActiveReservations", minArgs: 1, returnType: "array",    sourceSpec: "RF-03 / RV01"     },
   { name: "getReservationCount",   minArgs: 1, returnType: "number",   sourceSpec: "RF-03 / RV01"     },
   { name: "searchBooks",           minArgs: 1, returnType: "array",    sourceSpec: "RF-05/06 / SR02"  },
+  { name: "getCategories",         minArgs: 0, returnType: "array",    sourceSpec: "RF-05/06 / SR02"  },
   { name: "reserveBook",           minArgs: 2, returnType: "object",   sourceSpec: "RF-07 / RV03"     },
   { name: "cancelReservation",     minArgs: 2, returnType: "object",   sourceSpec: "RF-08 / RV02"     },
   { name: "getMyPageData",         minArgs: 1, returnType: "object",   sourceSpec: "RF-10 / MP01"     },

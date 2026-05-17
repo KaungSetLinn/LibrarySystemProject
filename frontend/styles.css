@@ -1,8 +1,8 @@
 /*
- * Readable-code review note:
- * - Role: Shared presentation rules. Keep layout concerns in CSS instead of encoding visual behavior in JavaScript.
- * - Keep behavior unchanged unless a specification or bug-fix task explicitly requires it.
- * - Comments in this file should explain intent, data contracts, and edge cases rather than repeat the code.
+ * READABLE-CODE REVIEW NOTE
+ * 対象ファイル: frontend/styles.css
+ * 責務: UI スタイル定義。画面構造を変えず、見た目とレスポンシブ調整だけを担当する。
+ * 保守メモ: JS の状態制御と混同しないこと。クリック不能問題では disabled 属性と pointer-events/z-index の両方を確認する。
  */
 /*
  * ----------------------------------------------------------------------------
