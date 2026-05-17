@@ -168,7 +168,16 @@ exports.searchBooks = async (req, res) => {
             AVAILABLE: '在庫あり',
             RESERVED: '予約中',
             ON_LOAN: '貸出中',
-            DISABLED: '利用不可',   // ④ 仕様書に合わせて修正
+            DISABLED: '利用不可',
+        };
+
+        // §24.2 補足2: actionState と矛盾しない canReserve 推奨対応
+        // ON_LOAN=true は未返却貸出中でも順番待ち予約を許可するため
+        const CAN_RESERVE_MAP = {
+            AVAILABLE: true,
+            ON_LOAN:   true,
+            RESERVED:  false,
+            DISABLED:  false,
         };
 
         const books = result.rows.map(book => {
@@ -176,7 +185,7 @@ exports.searchBooks = async (req, res) => {
                 _determineBookActionState(book, loanMap, reservationMap, currentUserId);
 
             return {
-                bookId: Number(book.bookId),   // ① 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
+                bookId: Number(book.bookId),   // 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
                 title: book.title,
                 author: book.author,
                 category: book.category,
@@ -185,6 +194,7 @@ exports.searchBooks = async (req, res) => {
                 actionState,
                 actionLabel,
                 dueDate,
+                canReserve: CAN_RESERVE_MAP[actionState] ?? false,  // §24.2 補足2: △ 補助項目
             };
         });
 
@@ -228,7 +238,20 @@ exports.getBookById = async (req, res) => {
     try {
 
         // =========================
-        // 1. bookId バリデーション
+        // 1. セッションチェック（§8.4.3b: 失敗 401 W02）
+        // =========================
+        const currentUserId = req.session?.user?.userId ?? null;
+        if (currentUserId === null) {
+            return res.status(401).json({
+                result:      'error',
+                messageCode: 'W02',
+                message:     'セッションが切れました。再度ログインしてください。',
+                data:        null,
+            });
+        }
+
+        // =========================
+        // 2. bookId バリデーション（§8.4.3b: 失敗 400 E01）
         // =========================
         const bookIdNum = parseInt(req.params.bookId, 10);
 
@@ -242,7 +265,7 @@ exports.getBookById = async (req, res) => {
         }
 
         // =========================
-        // 2. 書籍取得
+        // 3. 書籍取得
         // =========================
         const book = await Book.findOne({
             where: { bookId: bookIdNum },
@@ -253,11 +276,12 @@ exports.getBookById = async (req, res) => {
                 'category',
                 'arrivalDate',
                 'isDisabled',
+                'canReserve',  // §24.3 補助項目 canReserve 取得用に追加
             ],
         });
 
         // =========================
-        // 3. 書籍不存在（W17）
+        // 4. 書籍不存在（W17）
         // =========================
         if (!book) {
             return res.status(404).json({
@@ -269,26 +293,32 @@ exports.getBookById = async (req, res) => {
         }
 
         // =========================
-        // 4. レスポンス返却
+        // 5. レスポンス返却
         // =========================
+        // §24.3: canReserve は UI 補助項目。
+        // Book モデルで BOOLEAN NOT NULL DEFAULT true と定義済みのため null/undefined は発生しない。
+        // isDisabled=true の場合は予約不可なので強制 false とする。
+        const canReserve = book.canReserve && !book.isDisabled;
+
         return res.status(200).json({
             result:      'success',
             messageCode: 'I00',
             message:     'OK',
             data: {
-                bookId:      Number(book.bookId),
+                bookId:      Number(book.bookId),   // §24.3: integer 型で統一
                 title:       book.title,
                 author:      book.author,
                 category:    book.category,
                 arrivalDate: book.arrivalDate,
                 isDisabled:  book.isDisabled,
+                canReserve,                         // §24.3: △ 補助項目（既存クライアント互換を維持しつつ追加）
             },
         });
 
     } catch (err) {
 
         // =========================
-        // 5. システムエラー（E10）
+        // 6. システムエラー（E10）
         // =========================
         return res.status(500).json({
             result:      'error',
