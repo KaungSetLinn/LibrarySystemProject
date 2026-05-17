@@ -1,0 +1,27 @@
+{
+  "name": "library-Tbackend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "description": "豊田テストバックエンド(v3.0.6由来機能を追加)。MAIN backendと同一APIインターフェースに加え favorites/notifications/audit を提供。",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "init-db": "node scripts/initDatabase.js",
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "keywords": ["library", "toyoda", "test-backend"],
+  "author": "Y.Toyoda",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "sequelize": "^6.37.8",
+    "sequelize-cli": "^6.6.5",
+    "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

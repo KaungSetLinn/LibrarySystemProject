@@ -1,51 +1,52 @@
 # 📚 図書予約システム (Library Reservation System)
 
-## 🛠 Tech Stack
-- **Frontend:** HTML, CSS, JavaScript
-- **Backend:** Node.js, Express.js
+## 🛠 技術スタック
+- **フロントエンド:** HTML, CSS, JavaScript
+- **バックエンド:** Node.js, Express.js
 - **ORM:** Sequelize
-- **Database:** SQLite
+- **データベース:** SQLite
 
-## 📁 Project Structure
+## 📁 プロジェクト構成
 ```
 LibrarySystemProject/
 ├── frontend/
 └── library-backend/
 ```
 
-## 🚀 Getting Started
+## 🚀 はじめに
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) installed
+### 前提条件
+- [Node.js](https://nodejs.org/) がインストールされていること
 
-### Setup
+### セットアップ手順
 
-1. Clone the repo
+1. リポジトリをクローンする
 ```bash
    git clone https://github.com/KaungSetLinn/LibrarySystemProject.git
    cd LibrarySystemProject
 ```
 
-2. Install dependencies
+2. 依存パッケージをインストールする
 ```bash
    cd library-backend
    npm install
 ```
 
-3. Initialize the database (creates tables + seeds data)
+3. データベースを初期化する（マイグレーションとシードデータの投入）
 ```bash
-   npm run init-db
+   npx sequelize-cli db:migrate
+   npx sequelize-cli db:seed:all
 ```
 
-4. Start the development server
+4. 開発サーバーを起動する
 ```bash
    npm run dev
 ```
-   You should see:
+   以下のように表示されれば成功です：
 ```
    ✅ Database connected
    Server running on port 3000
 ```
 
-5. Access the app
-   - Open your browser and go to **http://localhost:3000**
+5. アプリにアクセスする
+   - ブラウザで **http://localhost:3000** を開いてください
