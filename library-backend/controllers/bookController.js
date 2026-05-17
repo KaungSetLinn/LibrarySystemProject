@@ -1,4 +1,5 @@
 const { Op } = require('sequelize');
+const sequelize = require('../db/connection');
 const Book = require('../models/Book');
 const Reservation = require('../models/Reservation');
 const Loan = require('../models/Loan');
@@ -168,7 +169,16 @@ exports.searchBooks = async (req, res) => {
             AVAILABLE: '在庫あり',
             RESERVED: '予約中',
             ON_LOAN: '貸出中',
-            DISABLED: '利用不可',   // ④ 仕様書に合わせて修正
+            DISABLED: '利用不可',
+        };
+
+        // §24.2 補足2: actionState と矛盾しない canReserve 推奨対応
+        // ON_LOAN=true は未返却貸出中でも順番待ち予約を許可するため
+        const CAN_RESERVE_MAP = {
+            AVAILABLE: true,
+            ON_LOAN:   true,
+            RESERVED:  false,
+            DISABLED:  false,
         };
 
         const books = result.rows.map(book => {
@@ -176,7 +186,7 @@ exports.searchBooks = async (req, res) => {
                 _determineBookActionState(book, loanMap, reservationMap, currentUserId);
 
             return {
-                bookId: Number(book.bookId),   // ① 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
+                bookId: Number(book.bookId),   // 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
                 title: book.title,
                 author: book.author,
                 category: book.category,
@@ -185,6 +195,7 @@ exports.searchBooks = async (req, res) => {
                 actionState,
                 actionLabel,
                 dueDate,
+                canReserve: CAN_RESERVE_MAP[actionState] ?? false,  // §24.2 補足2: △ 補助項目
             };
         });
 
@@ -224,25 +235,37 @@ exports.searchBooks = async (req, res) => {
 // 推薦項目表示などで利用
 // =============================================================
 exports.getBookById = async (req, res) => {
-
     try {
 
         // =========================
-        // 1. bookId バリデーション
+        // 1. セッションチェック（§8.4.3b: 失敗 401 W02）
+        // =========================
+        const currentUserId = req.session?.user?.userId ?? null;
+        if (currentUserId === null) {
+            return res.status(401).json({
+                result: 'error',
+                messageCode: 'W02',
+                message: 'セッションが切れました。再度ログインしてください。',
+                data: null,
+            });
+        }
+
+        // =========================
+        // 2. bookId バリデーション（§8.4.3b: 失敗 400 E01）
         // =========================
         const bookIdNum = parseInt(req.params.bookId, 10);
 
         if (!Number.isInteger(bookIdNum) || bookIdNum <= 0) {
             return res.status(400).json({
-                result:      'error',
+                result: 'error',
                 messageCode: 'E01',
-                message:     '入力に誤りがあります。',
-                data:        null,
+                message: '入力に誤りがあります。',
+                data: null,
             });
         }
 
         // =========================
-        // 2. 書籍取得
+        // 3. 書籍取得
         // =========================
         const book = await Book.findOne({
             where: { bookId: bookIdNum },
@@ -253,48 +276,141 @@ exports.getBookById = async (req, res) => {
                 'category',
                 'arrivalDate',
                 'isDisabled',
+                'canReserve',
             ],
         });
 
         // =========================
-        // 3. 書籍不存在（W17）
+        // 4. 書籍不存在（W17）
         // =========================
         if (!book) {
             return res.status(404).json({
-                result:      'error',
+                result: 'error',
                 messageCode: 'W17',
-                message:     '対象が見つかりません。',
-                data:        null,
+                message: '対象が見つかりません。',
+                data: null,
             });
         }
 
         // =========================
-        // 4. レスポンス返却
+        // 5. 貸出・予約状態を取得し actionState を判定
+        // =========================
+        const [activeLoan, activeReservation] = await Promise.all([
+            Loan.findOne({
+                where: { bookId: bookIdNum, returnDate: null },
+                attributes: ['bookId', 'dueDate'],
+            }),
+            Reservation.findOne({
+                where: { bookId: bookIdNum, status: { [Op.ne]: 'CANCELLED' } },
+                attributes: ['bookId', 'userId'],
+            }),
+        ]);
+
+        const loanMap = new Map(activeLoan ? [[activeLoan.bookId, activeLoan]] : []);
+        const reservationMap = new Map(
+            activeReservation ? [[Number(activeReservation.bookId), activeReservation.userId]] : []
+        );
+
+        const { actionState } = _determineBookActionState(
+            book,
+            loanMap,
+            reservationMap,
+            currentUserId
+        );
+
+        const CAN_RESERVE_MAP = {
+            AVAILABLE: true,
+            ON_LOAN: true,
+            RESERVED: false,
+            DISABLED: false,
+        };
+
+        // =========================
+        // 6. レスポンス返却
         // =========================
         return res.status(200).json({
-            result:      'success',
+            result: 'success',
             messageCode: 'I00',
-            message:     'OK',
+            message: 'OK',
             data: {
-                bookId:      Number(book.bookId),
-                title:       book.title,
-                author:      book.author,
-                category:    book.category,
+                bookId: Number(book.bookId),
+                title: book.title,
+                author: book.author,
+                category: book.category,
                 arrivalDate: book.arrivalDate,
-                isDisabled:  book.isDisabled,
+                isDisabled: book.isDisabled,
+                canReserve: CAN_RESERVE_MAP[actionState] ?? false,
             },
         });
 
     } catch (err) {
 
         // =========================
-        // 5. システムエラー（E10）
+        // 7. システムエラー（E10）
         // =========================
         return res.status(500).json({
-            result:      'error',
+            result: 'error',
             messageCode: 'E10',
-            message:     'システムエラーが発生しました。',
-            data:        null,
+            message: 'システムエラーが発生しました。',
+            data: null,
+        });
+    }
+};
+
+// =============================================================
+// API-04c  GET /api/v1/books/categories
+//
+// books.category の実値から重複なし・前後空白除去済みの
+// 分類一覧を返す（§24.4）
+// G03 詳細検索画面の分類プルダウン生成用
+// =============================================================
+exports.getCategories = async (req, res) => {
+    try {
+
+        // =========================
+        // 1. category の distinct 取得
+        //    NULL / 空文字は除外し、前後空白を除去して重複排除
+        // =========================
+        const rows = await Book.findAll({
+            attributes: [
+                [sequelize.fn('DISTINCT', sequelize.col('category')), 'category'],
+            ],
+            where: {
+                category: {
+                    [Op.and]: [
+                        { [Op.ne]: null },
+                        { [Op.ne]: '' },
+                    ],
+                },
+            },
+            raw: true,
+        });
+
+        const categories = rows
+            .map(r => r.category.trim())
+            .filter(c => c !== '')
+            .filter((c, i, arr) => arr.indexOf(c) === i);
+
+        // =========================
+        // 2. レスポンス返却
+        // =========================
+        return res.status(200).json({
+            result: 'success',
+            messageCode: 'I00',
+            message: 'OK',
+            data: { categories },
+        });
+
+    } catch (err) {
+
+        // =========================
+        // 3. システムエラー（E10）
+        // =========================
+        return res.status(500).json({
+            result: 'error',
+            messageCode: 'E10',
+            message: 'システムエラーが発生しました。',
+            data: null,
         });
     }
 };
