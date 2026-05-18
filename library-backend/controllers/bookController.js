@@ -168,7 +168,16 @@ exports.searchBooks = async (req, res) => {
             AVAILABLE: '在庫あり',
             RESERVED: '予約中',
             ON_LOAN: '貸出中',
-            DISABLED: '利用不可',   // ④ 仕様書に合わせて修正
+            DISABLED: '利用不可',
+        };
+
+        // §24.2 補足2: actionState と矛盾しない canReserve 推奨対応
+        // ON_LOAN=true は未返却貸出中でも順番待ち予約を許可するため
+        const CAN_RESERVE_MAP = {
+            AVAILABLE: true,
+            ON_LOAN:   true,
+            RESERVED:  false,
+            DISABLED:  false,
         };
 
         const books = result.rows.map(book => {
@@ -176,7 +185,7 @@ exports.searchBooks = async (req, res) => {
                 _determineBookActionState(book, loanMap, reservationMap, currentUserId);
 
             return {
-                bookId: Number(book.bookId),   // ① 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
+                bookId: Number(book.bookId),   // 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
                 title: book.title,
                 author: book.author,
                 category: book.category,
@@ -185,6 +194,7 @@ exports.searchBooks = async (req, res) => {
                 actionState,
                 actionLabel,
                 dueDate,
+                canReserve: CAN_RESERVE_MAP[actionState] ?? false,  // §24.2 補足2: △ 補助項目
             };
         });
 
