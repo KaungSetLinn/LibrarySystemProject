@@ -1,4 +1,5 @@
 const { Op } = require('sequelize');
+const sequelize = require('../db/connection');
 const Book = require('../models/Book');
 const Reservation = require('../models/Reservation');
 const Loan = require('../models/Loan');
@@ -349,6 +350,65 @@ exports.getBookById = async (req, res) => {
             messageCode: 'E10',
             message: 'システムエラーが発生しました。',
             data: null,
+        });
+    }
+};
+
+// =============================================================
+// API-04c  GET /api/v1/books/categories
+//
+// books.category の実値から重複なし・前後空白除去済みの
+// 分類一覧を返す（§24.4）
+// G03 詳細検索画面の分類プルダウン生成用
+// =============================================================
+exports.getCategories = async (req, res) => {
+    try {
+ 
+        // =========================
+        // 1. category の distinct 取得
+        //    NULL / 空文字は除外し、前後空白を除去して重複排除
+        // =========================
+        const rows = await Book.findAll({
+            attributes: [
+                [sequelize.fn('DISTINCT', sequelize.col('category')), 'category'],
+            ],
+            where: {
+                category: {
+                    [Op.and]: [
+                        { [Op.ne]: null },
+                        { [Op.ne]: '' },
+                    ],
+                },
+            },
+            raw: true,
+        });
+ 
+        const categories = rows
+            .map(r => r.category.trim())
+            .filter(c => c !== '')
+            // DISTINCT 後の trim で稀に重複が生じる場合に備えて再度 Set で排除
+            .filter((c, i, arr) => arr.indexOf(c) === i);
+ 
+        // =========================
+        // 2. レスポンス返却
+        // =========================
+        return res.status(200).json({
+            result:      'success',
+            messageCode: 'I00',
+            message:     'OK',
+            data: { categories },
+        });
+ 
+    } catch (err) {
+ 
+        // =========================
+        // 3. システムエラー（E10）
+        // =========================
+        return res.status(500).json({
+            result:      'error',
+            messageCode: 'E10',
+            message:     'システムエラーが発生しました。',
+            data:        null,
         });
     }
 };
