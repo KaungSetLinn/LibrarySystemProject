@@ -181,6 +181,10 @@
       // 再描画
       const data = await Service.getDashboard(Service.getSession().userId);
       _renderSummary(data); await _renderList(data);
+      // ★ 追加：ヘッダの未読バッジを再計算
+      if (typeof window.updateNotificationBadge === "function") {
+        window.updateNotificationBadge();
+      }
     } else {
       showMessage("error", r.message);
     }
