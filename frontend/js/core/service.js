@@ -114,7 +114,14 @@ const Service = (() => {
     });
   }
 
+  function _refreshNotificationBadge() {
+    if (typeof window.updateNotificationBadge === "function") {
+      window.updateNotificationBadge();
+    }
+  }
+
   /* ============== セッション管理（RF-01 / RF-02 / API-01） ============== */
+// ★ v6.0 追加：通知が増減し得る成功処理の後に共通で呼ぶ
 
   async function authenticate(userId, userName) {
     const sUid = String(userId  || "").trim();
@@ -273,14 +280,18 @@ const Service = (() => {
     const s = getSession();
     if (!s) return makeErr("E09", "セッションが切れています。再ログインしてください。");
     const raw = await _callRepo("reserveBook", [s.userId, bookId], null);
-    return _toServiceResult(raw, "予約しました。", "予約処理に失敗しました。");
+    const result = _toServiceResult(raw, "予約を登録しました。", "予約に失敗しました。");
+    if (result.success) _refreshNotificationBadge();   // ★ 追加
+    return result
   }
 
   async function cancelReservation(reservationId) {
     const s = getSession();
     if (!s) return makeErr("E09", "セッションが切れています。再ログインしてください。");
     const raw = await _callRepo("cancelReservation", [s.userId, reservationId], null);
-    return _toServiceResult(raw, "予約をキャンセルしました。", "取消処理に失敗しました。");
+    const result = _toServiceResult(raw, "予約をキャンセルしました。", "キャンセルに失敗しました。");
+    if (result.success) _refreshNotificationBadge();   // ★ 追加
+    return result;
   }
 
   /* ============== マイページ / 通知 / お気に入り（API-06） ============== */
@@ -304,8 +315,9 @@ const Service = (() => {
     const s = getSession();
     if (!s) return false;
     const raw = await _callRepo("markNotificationRead", [s.userId, notificationId], false);
-    if (raw === true || raw === false) return raw;
-    return raw && (raw.success === true || raw.ok === true || raw.result === "success");
+    const ok = raw === true || (raw && raw.success === true);
+    if (ok) _refreshNotificationBadge();   // ★ 追加
+    return ok;
   }
 
   async function addFavorite(bookId) {
@@ -329,15 +341,20 @@ const Service = (() => {
   async function bridgeExport()        { return await _callRepo("exportAll", [], "{}"); }
   async function bridgeImport(jsonStr) {
     const raw = await _callRepo("importAll", [jsonStr], null);
-    return _toServiceResult(raw, "取込が完了しました。", "取込に失敗しました。");
+    const result = _toServiceResult(raw, "取込が完了しました。", "取込に失敗しました。");
+    if (result.success) _refreshNotificationBadge();   // ★ 追加
+    return result;
   }
   async function bridgeReset() {
     await _callRepo("resetToSeed", [], undefined);
+    _refreshNotificationBadge();   // ★ 追加（戻り値なしのため常に呼ぶ）
     return makeOk("I09", "初期データに戻しました。");
   }
   async function handleLoanEvent(ev) {
     const raw = await _callRepo("handleLoanEvent", [ev], null);
-    return _toServiceResult(raw, "OK", "貸出連携に失敗しました。");
+    const result = _toServiceResult(raw, "OK", "貸出連携に失敗しました。");
+    if (result.success) _refreshNotificationBadge();   // ★ 追加
+    return result;
   }
 
   async function getBookById(bookId) {

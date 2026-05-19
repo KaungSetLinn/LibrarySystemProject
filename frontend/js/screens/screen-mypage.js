@@ -373,6 +373,11 @@
       const r = await Service.bridgeImport(String(reader.result || ""));
       if (r.success) { showMessage("success", r.message); await _refresh(); }
       else           { showMessage("error",   r.message); }
+      if (r.success) {
+        if (typeof window.updateNotificationBadge === "function") {
+          window.updateNotificationBadge();
+        }
+      }
     };
     reader.onerror = () => showMessage("error", "ファイル読込に失敗しました。");
     reader.readAsText(file, "utf-8");
@@ -394,6 +399,12 @@
     const r = await Service.bridgeReset();
     if (r.success) { showMessage("success", r.message); await _refresh(); }
     else           { showMessage("error",   r.message || "初期化に失敗しました。"); }
+
+    if (r.success) {
+      if (typeof window.updateNotificationBadge === "function") {
+        window.updateNotificationBadge();
+      }
+    }
   }
 
   Router.register("mypage", {

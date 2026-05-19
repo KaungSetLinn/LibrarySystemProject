@@ -183,6 +183,10 @@
     if (r.success) {
       showMessage("success", r.message);
       await _runSearch(); // 状態を反映するため再描画
+      // ★ 追加：予約成立で通知が増えるためヘッダの未読バッジを再計算
+      if (typeof window.updateNotificationBadge === "function") {
+        window.updateNotificationBadge();
+      }
     } else {
       showMessage("error", r.message);
     }
