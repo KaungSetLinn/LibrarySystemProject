@@ -168,7 +168,9 @@
     // 未読件数の再計算
     await _refresh();
   }
-
+  if (typeof window.updateNotificationBadge === "function") {
+    window.updateNotificationBadge();
+  }
   Router.register("notification", {
     title: "通知",
     requireAuth: true,
