@@ -93,15 +93,17 @@ async function bootApp() {
     //     ConfigManager.init() 完了後に起動することで、txt 設定読込前に
     //     Adapter が dbType=Excel と誤判定して停止する競合を避ける。
     // ----------------------------------------------------------------
-    if (window.ConfigManager && ConfigManager.get("dbType") === "SQLite") {
-      let sqliteReady = false;
-      if (window.SQLiteAdapter && typeof SQLiteAdapter.init === "function") {
-        sqliteReady = await SQLiteAdapter.init();
-      }
-      if (!sqliteReady && window.ApiAdapter && typeof ApiAdapter.ping === "function") {
-        await ApiAdapter.ping();
-      }
-    }
+	if (window.ConfigManager && ConfigManager.get("dbType") === "SQLite") {
+	  let apiReady = false;
+
+	  if (window.ApiAdapter && typeof ApiAdapter.ping === "function") {
+	    apiReady = await ApiAdapter.ping();
+	  }
+
+	  if (!apiReady && window.SQLiteAdapter && typeof SQLiteAdapter.init === "function") {
+	    await SQLiteAdapter.init();
+	  }
+	}
 
     // ----------------------------------------------------------------
     // (3) DataSource 契約セルフチェック（議事録 P3-08）
