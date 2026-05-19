@@ -40,6 +40,11 @@
    * @spec    G01 / 議事録 P5-12（左ペインモバイル折畳）
    */
   function view() {
+    const backendMode = (window.ConfigManager && typeof ConfigManager.getBackendMode === "function")
+      ? ConfigManager.getBackendMode()
+      : "MAIN";
+    const showDbSwitch = backendMode !== "MAIN";
+
     return `
       <main class="login-card">
         <div class="login-grid">
@@ -63,10 +68,11 @@
                   <strong>iPhone SE まで対応</strong>
                   <span>PC とスマートフォンで同じ操作が完了する設計です。</span>
                 </div>
+                ${showDbSwitch ? `
                 <div class="feature-point">
                   <strong>Excel/SQLite 切替</strong>
                   <span>同一 API でデータソースを切替えてテストできます。</span>
-                </div>
+                </div>` : ""}
               </div>
 
               <div class="login-feature-note">
@@ -104,6 +110,7 @@
                          placeholder="例: 佐藤翔太" />
                 </div>
 
+                ${showDbSwitch ? `
                 <div class="form-row">
                   <label for="dbTypeSelect">データソース（テスト用切替）</label>
                   <select id="dbTypeSelect" aria-describedby="dbTypeHelp">
@@ -113,7 +120,7 @@
                   <small id="dbTypeHelp" class="muted">
                     ※ 一時切替のみ。恒久変更は library-system-config.txt を編集してください。
                   </small>
-                </div>
+                </div>` : ""}
 
                 <div class="form-row">
                   <label for="browserName">ブラウザの種類</label>
@@ -135,7 +142,7 @@
                 </div>
 
                 <p class="muted login-meta">
-                  動作日: <span data-today></span> ・ DB: <span data-config-summary></span>
+                  動作日: <span data-today></span>${showDbSwitch ? ` ・ DB: <span data-config-summary></span>` : ""}
                 </p>
               </form>
             </div>
