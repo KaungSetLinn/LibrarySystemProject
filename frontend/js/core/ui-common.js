@@ -252,17 +252,33 @@ function buildMobileBottomNav() {
  * @returns {void}
  * @spec    RF-14 / TC-UI-08
  */
+/**
+ * setupViewMode
+ * 概要 : data-view-toggle ボタンで PC/スマホ表示プレビューを切替える。
+ *        v6.0 追加: 利用環境に応じて、プレビュー機能自体を無効化する。
+ *          - UA でスマホと判定された場合 → ボタンを DOM から削除
+ *          - 画面幅が 768px 未満の場合   → ボタンを DOM から削除
+ *          - それ以外（PC 想定）         → 「スマホ表示でプレビュー」は提供しない
+ *            （UA + 幅併用の判定により、PC でも本ボタンは削除する）
+ * @returns {void}
+ * @spec    RF-14
+ */
 function setupViewMode() {
   const btn = document.querySelector("[data-view-toggle]");
   if (!btn) return;
-  applyViewMode(localStorage.getItem("lib-view-mode") || "auto");
-  if (btn._wired) return;
-  btn._wired = true;
-  btn.addEventListener("click", () => {
-    const next = (localStorage.getItem("lib-view-mode") || "auto") === "auto" ? "phone" : "auto";
-    localStorage.setItem("lib-view-mode", next);
-    applyViewMode(next);
-  });
+
+  // ---- デバイス判定（UA + 画面幅の併用）----
+  const ua = (navigator.userAgent || "").toLowerCase();
+  const isMobileUA =
+    /iphone|ipod|android.*mobile|windows phone|mobile safari/.test(ua);
+  const isNarrow = window.innerWidth < 768;
+  const isMobile = isMobileUA || isNarrow;
+
+  // 仕様: PC / スマホのいずれの場合もプレビュー切替は提供しない。
+  // → DOM から削除して操作不能化（残存している localStorage 値も初期化）。
+  try { localStorage.removeItem("lib-view-mode"); } catch (_e) {}
+  document.body.classList.remove("force-phone");
+  btn.remove();
 }
 
 /**
