@@ -50,7 +50,7 @@ exports.getMyPage = async (req, res) => {
             // ---------- 1-1. 現在予約一覧 ----------
             // status='RESERVED' のみ取得（§8.4.6 フィールド構成 1）。
             // books テーブルを LEFT JOIN し title / author を付与する。
-            // reservedAt 降順。
+            // pickupDeadline 昇順。
             Reservation.findAll({
                 where: {
                     userId,
@@ -61,7 +61,7 @@ exports.getMyPage = async (req, res) => {
                     required: false,    // 書籍削除済みでも予約レコードを返す（LEFT JOIN）
                     attributes: ['title', 'author'],
                 }],
-                order: [['reservedAt', 'DESC']],
+                order: [['pickupDeadline', 'ASC']],
             }),
 
             // ---------- 1-2. 予約履歴 ----------
@@ -118,6 +118,9 @@ exports.getMyPage = async (req, res) => {
             author:        r.Book?.author ?? null,
             status:        r.status,                    // RESERVED 固定
             reservedAt:    r.reservedAt,
+            pickupDeadline: r.pickupDeadline,
+            queueNo: r.queueNo,
+            cancelledAt: r.cancelledAt,
         }));
 
         // フィールド構成 2: history
