@@ -4,6 +4,7 @@ const Audit = require('../models/Audit');
 
 const { _writeAuditLog } = require('../helpers/auditHelper');
 const { _checkOwner } = require('../helpers/ownerHelper');
+const { _toLocalISO } = require('../helpers/dateHelper');
 
 // =============================================================
 // API-03b  GET /api/v1/users/:userId/notifications
@@ -62,7 +63,7 @@ exports.listNotifications = async (req, res) => {
             title: n.title,
             body: n.message,
             isRead: n.isRead,
-            createdAt: n.createdAt,
+            createdAt: _toLocalISO(n.createdAt),
         }));
 
         return res.status(200).json({
