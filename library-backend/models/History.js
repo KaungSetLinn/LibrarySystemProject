@@ -35,7 +35,17 @@ const History = sequelize.define('History', {
     detail: {
         type: DataTypes.TEXT,
         allowNull: true
-    }
+    },
+    reservationId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: { model: 'reservations', key: 'reservationId' }
+    },
+    loanId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: { model: 'loans', key: 'loanId' }
+    },
 }, {
     tableName: 'history',
     timestamps: false,

@@ -100,3 +100,21 @@ Book.hasMany(Favorite, {
 Favorite.belongsTo(Book, {
     foreignKey: 'bookId'
 });
+
+// ===== Reservation ↔ History (1:N) =====
+Reservation.hasMany(History, {
+    foreignKey: 'reservationId'
+});
+
+History.belongsTo(Reservation, {
+    foreignKey: 'reservationId'
+});
+
+// ===== Loan ↔ History (1:N) =====
+Loan.hasMany(History, {
+    foreignKey: 'loanId'
+});
+
+History.belongsTo(Loan, {
+    foreignKey: 'loanId'
+});
