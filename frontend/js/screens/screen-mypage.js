@@ -148,7 +148,7 @@
       unreadNotifCount: (data.notifications || []).filter(n => !n.isRead).length
     };
     _renderSummary(summary);
-    _renderReservations(data.currentReservations);
+    await _renderReservations(data.currentReservations);
     _renderHistory(data.history);
     _renderFavorites(data.favorites);
     _renderNotificationsPreview(data.notifications);
@@ -201,34 +201,128 @@
    * _renderReservations
    * @param {Array} list
    */
-  function _renderReservations(list) {
-    const host = document.querySelector("[data-mp-reservations-host]");
-    if (!host) return;
-    if (!list.length) {
-      host.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon" aria-hidden="true">📚</div>
-          <p>予約中の本はありません。</p>
-          <a href="#/advanced-search" class="btn btn-primary">書籍を検索する</a>
-        </div>`;
-      return;
-    }
-    let html = `<table class="table"><thead><tr>
-        <th>予約ID</th><th>書籍ID</th><th>状態</th><th>予約日</th><th>受取期限</th>
-      </tr></thead><tbody>`;
-    list.forEach(r => {
-      html += `<tr>
+async function _renderReservations(list) {
+  const host = document.querySelector("[data-mp-reservations-host]");
+  if (!host) return;
+
+  if (!list || !list.length) {
+    host.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">📚</div>
+        <p>予約中の本はありません。</p>
+        <a href="#/advanced-search" class="btn btn-primary">書籍を検索する</a>
+      </div>`;
+    return;
+  }
+
+  let html = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>予約ID</th><th>書籍</th><th>状態</th><th>予約日</th><th>受取期限</th><th>操作</th>
+        </tr>
+      </thead><tbody>`;
+
+  for (const r of list) {
+    const book   = r.title ? null : await _findBook(r.bookId);
+    const title  = r.title  || (book ? book.title  : `(book ${r.bookId})`);
+    const author = r.author || (book ? book.author : "");
+    html += `
+      <tr>
         <td>${escapeHTML(r.reservationId)}</td>
-        <td>${escapeHTML(r.bookId)}</td>
+        <td>
+          <strong>${escapeHTML(title)}</strong><br />
+          <span class="muted">${escapeHTML(author)}</span>
+        </td>
         <td>${escapeHTML(r.status)}</td>
         <td>${escapeHTML(formatDate(r.reservedAt))}</td>
         <td>${escapeHTML(formatDate(r.pickupDeadline))}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" data-cancel-id="${escapeHTML(r.reservationId)}">
+            キャンセル
+          </button>
+        </td>
       </tr>`;
-    });
-    html += `</tbody></table>`;
-    host.innerHTML = html;
-    decorateResponsiveTables();
   }
+
+  html += `</tbody></table>`;
+  host.innerHTML = html;
+  decorateResponsiveTables();
+
+  host.querySelectorAll("[data-cancel-id]").forEach(btn => {
+    btn.addEventListener("click", () => _onCancelReservation(btn.dataset.cancelId));
+  });
+}
+
+async function _findBook(bookId) {
+  if (window.Service && typeof Service.getBookById === "function") {
+    try {
+      return await Service.getBookById(bookId);
+    } catch (_e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+async function _onCancelReservation(reservationId) {
+  if (!confirm(`予約 ${reservationId} をキャンセルしてよろしいですか？`)) return;
+
+  const r = await Service.cancelReservation(reservationId);
+  if (r.success) {
+    showMessage("success", r.message);
+
+    const userId = Service.getSession().userId;
+    const data   = await Service.getMyPageData(userId);
+
+    await _renderReservations(data.currentReservations);
+
+    if (typeof _renderSummary === "function") {
+      _renderSummary(data);
+    }
+
+    if (typeof window.updateNotificationBadge === "function") {
+      window.updateNotificationBadge();
+    }
+  } else {
+    showMessage("error", r.message);
+  }
+}
+async function _findBook(bookId) {
+  if (window.Service && typeof Service.getBookById === "function") {
+    try {
+      return await Service.getBookById(bookId);
+    } catch (_e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+async function _onCancelReservation(reservationId) {
+  if (!confirm(`予約 ${reservationId} をキャンセルしてよろしいですか？`)) return;
+
+  const r = await Service.cancelReservation(reservationId);
+  if (r.success) {
+    showMessage("success", r.message);
+
+    const userId = Service.getSession().userId;
+    const data   = await Service.getMyPageData(userId);
+
+    await _renderReservations(data.currentReservations);
+
+    if (typeof _renderSummary === "function") {
+      _renderSummary(data);
+    }
+
+    if (typeof window.updateNotificationBadge === "function") {
+      window.updateNotificationBadge();
+    }
+  } else {
+    showMessage("error", r.message);
+  }
+}
+
 
   /* ========== 履歴 ========== */
 
