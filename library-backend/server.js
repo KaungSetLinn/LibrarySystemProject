@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 
 const { requireLogin } = require('./middleware/auth');
 
@@ -51,7 +52,42 @@ app.use(session({
 
 app.use(express.static(frontendPath));
 
-// Global auth — /api/v1/auth/* and /api/v1/health are public
+// ── CSRF helper ──────────────────────────────────────────────────────────────
+function generateCsrfToken() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+// GET /api/v1/csrf-token  (public — called before any mutating request)
+app.get('/api/v1/csrf-token', (req, res) => {
+    if (!req.session.csrfToken) {
+        req.session.csrfToken = generateCsrfToken();
+    }
+    res.json({ data: { csrfToken: req.session.csrfToken } });
+});
+
+// CSRF validation — applied to all state-changing methods
+app.use((req, res, next) => {
+    const EXEMPT_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+    if (EXEMPT_METHODS.includes(req.method)) return next();
+
+    const tokenFromHeader = req.headers['x-csrf-token'];
+    const sessionToken    = req.session.csrfToken;
+
+    if (!sessionToken || !tokenFromHeader) {
+        return res.status(403).json({ error: 'CSRFトークンがありません' });
+    }
+
+    // Timing-safe comparison to prevent timing attacks
+    const a = Buffer.from(tokenFromHeader);
+    const b = Buffer.from(sessionToken);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        return res.status(403).json({ error: 'CSRFトークンが無効です' });
+    }
+
+    next();
+});
+
+// ── Global auth — /api/v1/auth/* and /api/v1/health are public ───────────────
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/v1/auth/')) return next();
     if (req.path === '/api/v1/health') return next();
