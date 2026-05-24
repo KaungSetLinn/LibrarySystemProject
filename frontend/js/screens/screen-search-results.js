@@ -179,16 +179,33 @@
    */
   async function _onReserve(bookId) {
     if (!confirm(`書籍 ${bookId} を予約してよろしいですか？`)) return;
+
+    console.info("[screen-search-results] _onReserve called", { bookId });
+    const btns = document.querySelectorAll(`[data-reserve-id="${bookId}"]`);
+    btns.forEach(b => { b.disabled = true; });
+
     const r = await Service.reserveBook(bookId);
-    if (r.success) {
-      showMessage("success", r.message);
-      await _runSearch(); // 状態を反映するため再描画
-      // ★ 追加：予約成立で通知が増えるためヘッダの未読バッジを再計算
+    console.info("[screen-search-results] reserveBook result", r);
+
+    if (r && r.success) {
+      showMessage("success", r.message || "予約を登録しました。");
+
+      // ヘッダの未読バッジを即時更新（既存フック）
       if (typeof window.updateNotificationBadge === "function") {
         window.updateNotificationBadge();
       }
+
+      // 仕様書 v6.2 §7.3 手順：予約成功時は G02（予約状況）へ遷移
+      setTimeout(() => {
+        if (window.Router && typeof Router.navigate === "function") {
+          Router.navigate("reservation-status");
+        } else {
+          location.hash = "#/reservation-status";
+        }
+      }, 800);
     } else {
-      showMessage("error", r.message);
+      showMessage("error", (r && r.message) || "予約に失敗しました。");
+      btns.forEach(b => { b.disabled = false; });
     }
   }
 
