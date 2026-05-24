@@ -1,8 +1,10 @@
-const Reservation        = require('../models/Reservation');
-const Book               = require('../models/Book');
-const Notification       = require('../models/Notification');
-const Favorite           = require('../models/Favorite');
+const Reservation = require('../models/Reservation');
+const Book = require('../models/Book');
+const Notification = require('../models/Notification');
+const Favorite = require('../models/Favorite');
 const RESERVATION_STATUS = require('../constants/reservationStatus');
+const History = require('../models/History');
+const { _toLocalISO } = require('../helpers/dateHelper');
 
 // =============================================================
 // API-07  GET /api/v1/users/:userId/mypage  （G06 対応）
@@ -45,7 +47,7 @@ exports.getMyPage = async (req, res) => {
         //    ※ History モデルは使用しない。history は reservations テーブルから
         //      全件取得して構築する（§8.4.6 フィールド構成 2 参照）。
         // --------------------------------------------------
-        const [reservationRows, allReservationRows, favoriteRows, notificationRows] = await Promise.all([
+        const [reservationRows, historyRows, favoriteRows, notificationRows] = await Promise.all([
 
             // ---------- 1-1. 現在予約一覧 ----------
             // status='RESERVED' のみ取得（§8.4.6 フィールド構成 1）。
@@ -64,18 +66,22 @@ exports.getMyPage = async (req, res) => {
                 order: [['pickupDeadline', 'ASC']],
             }),
 
-            // ---------- 1-2. 予約履歴 ----------
-            // status 問わず全予約レコードを取得（RESERVED / CANCELLED / FULFILLED）。
-            // books テーブルを LEFT JOIN し title を付与する。
-            // reservedAt 降順、最大 50 件（§8.4.6 フィールド構成 2）。
-            Reservation.findAll({
+            // 1-2. 履歴一覧
+            History.findAll({
                 where: { userId },
-                include: [{
-                    model: Book,
-                    required: false,    // 書籍削除済みでも履歴を返す（LEFT JOIN）
-                    attributes: ['title'],
-                }],
-                order: [['reservedAt', 'DESC']],
+                include: [
+                    {
+                        model: Book,
+                        required: false,
+                        attributes: ['title'],
+                    },
+                    {
+                        model: Reservation,
+                        required: false,
+                        attributes: ['reservedAt', 'cancelledAt'],
+                    },
+                ],
+                order: [['eventAt', 'DESC']],
                 limit: 50,
             }),
 
@@ -113,11 +119,11 @@ exports.getMyPage = async (req, res) => {
         // status='RESERVED' 固定、pickupDeadline は含まない
         const currentReservations = reservationRows.map(r => ({
             reservationId: r.reservationId,
-            bookId:        r.bookId,
-            title:         r.Book?.title  ?? null,
-            author:        r.Book?.author ?? null,
-            status:        r.status,                    // RESERVED 固定
-            reservedAt:    r.reservedAt,
+            bookId: r.bookId,
+            title: r.Book?.title ?? null,
+            author: r.Book?.author ?? null,
+            status: r.status,                    // RESERVED 固定
+            reservedAt: r.reservedAt,
             pickupDeadline: r.pickupDeadline,
             queueNo: r.queueNo,
             cancelledAt: r.cancelledAt,
@@ -125,33 +131,36 @@ exports.getMyPage = async (req, res) => {
 
         // フィールド構成 2: history
         // reservations テーブル全件。cancelledAt は CANCELLED の場合のみ非 null。
-        const history = allReservationRows.map(r => ({
-            reservationId: r.reservationId,
-            bookId:        r.bookId,
-            title:         r.Book?.title ?? null,
-            status:        r.status,                    // RESERVED / CANCELLED / FULFILLED
-            reservedAt:    r.reservedAt,
-            cancelledAt:    r.status === RESERVATION_STATUS.CANCELLED ? (r.cancelledAt ?? null) : null,
+        const history = historyRows.map(h => ({
+            historyId: h.historyId,
+            reservationId: h.reservationId ?? null,
+            loanId: h.loanId ?? null,
+            bookId: h.bookId,
+            title: h.Book?.title ?? null,
+            eventType: h.eventType,
+            eventAt: _toLocalISO(h.eventAt),
+            reservedAt: _toLocalISO(h.Reservation?.reservedAt) ?? null,
+            cancelledAt: _toLocalISO(h.Reservation?.cancelledAt) ?? null,
         }));
 
         // フィールド構成 3: favorites
         // category / addedAt は仕様に含まれないため除外
         const favorites = favoriteRows.map(f => ({
             favoriteId: f.favoriteId,
-            bookId:     f.bookId,
-            title:      f.Book?.title   ?? null,
-            author:     f.Book?.author  ?? null,
+            bookId: f.bookId,
+            title: f.Book?.title ?? null,
+            author: f.Book?.author ?? null,
         }));
 
         // フィールド構成 4: notifications
         // type はモデルの type をそのまま使用（severity へのリネーム廃止）
         const notifications = notificationRows.map(n => ({
             notificationId: n.notificationId,
-            type:           n.type,             // モデル: type → 仕様書: type（リネームなし）
-            title:          n.title,
-            body:           n.message,          // モデル: message → 仕様書: body
-            isRead:         Boolean(n.isRead),  // 0/1 整数も boolean に正規化（§8.4.6 備考）
-            createdAt:      n.createdAt,
+            type: n.type,             // モデル: type → 仕様書: type（リネームなし）
+            title: n.title,
+            body: n.message,          // モデル: message → 仕様書: body
+            isRead: Boolean(n.isRead),  // 0/1 整数も boolean に正規化（§8.4.6 備考）
+            createdAt: _toLocalISO(n.createdAt),
         }));
 
         // --------------------------------------------------
@@ -160,9 +169,9 @@ exports.getMyPage = async (req, res) => {
         //    4配列はすべて data 配下にネストする。
         // --------------------------------------------------
         return res.status(200).json({
-            result:      'success',
+            result: 'success',
             messageCode: 'I00',
-            message:     'OK',
+            message: 'OK',
             data: {
                 currentReservations,
                 history,
@@ -174,10 +183,10 @@ exports.getMyPage = async (req, res) => {
     } catch (err) {
         // DB例外（仕様書 §8.4.6 / §7.2.3 E10）
         return res.status(500).json({
-            result:      'error',
+            result: 'error',
             messageCode: 'E10',
-            message:     'システムエラーが発生しました。',
-            data:        null,
+            message: 'システムエラーが発生しました。',
+            data: null,
         });
     }
 };

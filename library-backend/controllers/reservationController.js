@@ -271,6 +271,7 @@ exports.reserveBook = async (req, res) => {
             eventType: 'RESERVE',
             eventAt: now,
             detail,
+            reservationId: created.reservationId,
         }, { transaction });
 
         // -------------------------------------------------
@@ -472,6 +473,7 @@ exports.cancelReservation = async (req, res) => {
             eventType: 'CANCEL',
             eventAt: now,
             detail: `bookId=${reservation.bookId} reservationId=${reservationIdNum} status=${RESERVATION_STATUS.CANCELLED}`,
+            reservationId: reservationIdNum
         }, { transaction });
 
         // -------------------------------------------------
