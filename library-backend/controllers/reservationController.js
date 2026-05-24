@@ -306,7 +306,7 @@ exports.reserveBook = async (req, res) => {
         // §8.4.4 成功レスポンス: message 固定、data に reservationId / bookId / reservedAt
         return res.status(200).json({
             result: 'success',
-            messageCode: 'I01',
+            messageCode: 'I02',
             message: `「${book.title}」を予約しました。`,
             data: {
                 reservationId: created.reservationId,
