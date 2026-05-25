@@ -132,11 +132,22 @@
    * @returns {Promise<number>}
    */
   async function _fetchUnreadCount(userId) {
+    // ★ 防御線：bootApp 未完了時（Adapter 未確定）は 0 件として静かに退避。
+    //   ExcelAdapter フォールバック経路で localStorage の古い通知データを
+    //   参照して誤バッジを出すバグ（通知バッジ常に1件）への対策。
+    //   bootApp 完了で改めて updateNotificationBadge() が呼ばれて正しい件数になる。
+    var booted = (typeof window.__BOOTAPP_READY === "boolean" && window.__BOOTAPP_READY === true);
+    if (!booted) return 0;
+
     try {
       if (window.Service && typeof Service.getNotifications === "function") {
         var list = await Service.getNotifications(userId);
         if (Array.isArray(list)) {
-          return list.filter(function (n) { return n && n.isRead === false; }).length;
+          // isRead は API 経由なら boolean、SQLite 直結なら 0/1 のため、
+          // 「false / 0 / null / undefined を未読」と扱う頑健判定を採用。
+          return list.filter(function (n) {
+            return n && (n.isRead === false || n.isRead === 0 || n.isRead == null);
+          }).length;
         }
       }
     } catch (_e) { /* fallthrough */ }
