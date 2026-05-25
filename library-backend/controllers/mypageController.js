@@ -150,6 +150,7 @@ exports.getMyPage = async (req, res) => {
             bookId: f.bookId,
             title: f.Book?.title ?? null,
             author: f.Book?.author ?? null,
+            addedAt: f.addedAt
         }));
 
         // フィールド構成 4: notifications
