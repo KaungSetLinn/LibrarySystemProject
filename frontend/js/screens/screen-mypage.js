@@ -363,32 +363,40 @@ async function _onCancelReservation(reservationId) {
   function _renderFavorites(list) {
     const host = document.querySelector("[data-mp-favorites-host]");
     if (!host) return;
-    if (!list.length) {
+    if (!list || !list.length) {
       host.innerHTML = `<div class="empty-state"><div class="empty-icon" aria-hidden="true">⭐</div>
         <p>お気に入り登録した書籍はありません。</p></div>`;
       return;
     }
     let html = `<table class="table"><thead><tr>
-        <th>お気に入りID</th><th>書籍ID</th><th>登録日</th><th>操作</th>
+        <th>お気に入りID</th><th>書籍</th><th>登録日</th><th>操作</th>
       </tr></thead><tbody>`;
     list.forEach(f => {
+      const addedAt = f.addedAt || f.favoritedAt || f.createdAt || null;
+      const addedText = addedAt ? formatDate(addedAt) : "—";
+      const title = f.title || `(book ${f.bookId})`;
       html += `<tr>
         <td>${escapeHTML(f.favoriteId)}</td>
-        <td>${escapeHTML(f.bookId)}</td>
-        <td>${escapeHTML(formatDate(f.createdAt))}</td>
-        <td><button class="btn btn-secondary btn-sm" data-fav-remove="${escapeHTML(f.bookId)}">削除</button></td>
+        <td>
+          <strong>${escapeHTML(title)}</strong><br />
+          <span class="muted">書籍ID: ${escapeHTML(f.bookId)}</span>
+        </td>
+        <td>${escapeHTML(addedText)}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" data-fav-remove="${escapeHTML(f.favoriteId)}">削除</button>
+        </td>
       </tr>`;
     });
     html += `</tbody></table>`;
     host.innerHTML = html;
     decorateResponsiveTables();
-
+  
     host.querySelectorAll("[data-fav-remove]").forEach(btn => {
       btn.addEventListener("click", async () => {
         if (!confirm("お気に入りから削除してよろしいですか？")) return;
         const ok = await Service.removeFavorite(btn.dataset.favRemove);
         if (ok) { showMessage("success", "お気に入りから削除しました。"); await _refresh(); }
-        else    { showMessage("error", "削除に失敗しました。"); }
+        else    { showMessage("error",   "お気に入りの削除に失敗しました。"); }
       });
     });
   }

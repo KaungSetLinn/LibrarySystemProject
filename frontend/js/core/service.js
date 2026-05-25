@@ -322,20 +322,18 @@ const Service = (() => {
 
   async function addFavorite(bookId) {
     const s = getSession();
-    if (!s) return false;
-    const raw = await _callRepo("addFavorite", [s.userId, bookId], false);
-    if (raw === true || raw === false) return raw;
-    return raw && (raw.success === true || raw.ok === true || raw.result === "success");
+    if (!s) return makeErr("E09", "セッションが切れています。再ログインしてください。");
+    const raw = await _callRepo("addFavorite", [s.userId, bookId], null);
+    const result = _toServiceResult(raw, "お気に入りに追加しました。", "お気に入り追加に失敗しました。");
+    return result;
   }
-
-  async function removeFavorite(bookId) {
+  async function removeFavorite(favoriteId) {
     const s = getSession();
-    if (!s) return false;
-    const raw = await _callRepo("removeFavorite", [s.userId, bookId], false);
-    if (raw === true || raw === false) return raw;
-    return raw && (raw.success === true || raw.ok === true || raw.result === "success");
+    if (!s) return makeErr("E09", "セッションが切れています。再ログインしてください。");
+    const raw = await _callRepo("removeFavorite", [s.userId, favoriteId], null);
+    const result = _toServiceResult(raw, "お気に入りから削除しました。", "お気に入り削除に失敗しました。");
+    return result;
   }
-
   /* ============== ブリッジ・貸出連携（API-07/08/09/10） ============== */
 
   async function bridgeExport()        { return await _callRepo("exportAll", [], "{}"); }
