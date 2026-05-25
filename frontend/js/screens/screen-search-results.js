@@ -158,6 +158,7 @@
                     ${b.canReserve ? "" : "disabled"}>
               ${escapeHTML(b.actionLabel || "予約する")}
             </button>
+                  <button class="btn btn-secondary btn-sm" data-favorite-id="${escapeHTML(b.bookId)}">☆ お気に入り</button>
           </td>
         </tr>`;
     });
@@ -169,6 +170,29 @@
     host.querySelectorAll("[data-reserve-id]").forEach(btn => {
       btn.addEventListener("click", () => _onReserve(btn.dataset.reserveId));
     });
+    host.querySelectorAll("[data-favorite-id]").forEach(btn => {
+      btn.addEventListener("click", () => _onAddFavorite(btn.dataset.favoriteId, btn));
+    });
+
+    // 既登録お気に入りを初期反映（v6.3 追加）
+    (async () => {
+      try {
+        const favList = await Service.listFavorites();
+        const favIds = new Set(
+          (Array.isArray(favList) ? favList : []).map(f => String(f.bookId))
+        );
+        host.querySelectorAll("[data-favorite-id]").forEach(btn => {
+          if (favIds.has(String(btn.dataset.favoriteId))) {
+            btn.textContent = "★ お気に入り済";
+            btn.classList.add("is-favorited");
+            btn.setAttribute("aria-pressed", "true");
+            btn.disabled = true;
+          }
+        });
+      } catch (e) {
+        if (window.Logger) Logger.warn("favorites init", e.message);
+      }
+    })();
   }
 
   /**
@@ -177,6 +201,30 @@
    * @param {string} bookId
    * @spec   RV03 / RF-07 / 議事録 P4-07
    */
+
+  async function _onAddFavorite(bookId, btn) {
+    if (!bookId || !btn) return;
+    btn.disabled = true;
+    const r = await Service.addFavorite(bookId);
+    const ok =
+      r === true ||
+      (r && r.success === true) ||
+      (r && r.ok === true) ||
+      (r && r.result === "success");
+    if (ok) {
+      const msg = (r && r.message) || "お気に入りに追加しました。";
+      showMessage("success", msg);
+      btn.textContent = "★ お気に入り済";
+      btn.classList.add("is-favorited");
+      btn.setAttribute("aria-pressed", "true");
+      btn.disabled = true;
+    } else {
+      const msg = (r && r.message) || "お気に入り追加に失敗しました。";
+      showMessage("error", msg);
+      btn.disabled = false;
+    }
+  }
+
   async function _onReserve(bookId) {
     if (!confirm(`書籍 ${bookId} を予約してよろしいですか？`)) return;
 
