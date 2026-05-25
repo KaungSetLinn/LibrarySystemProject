@@ -394,9 +394,20 @@ async function _onCancelReservation(reservationId) {
     host.querySelectorAll("[data-fav-remove]").forEach(btn => {
       btn.addEventListener("click", async () => {
         if (!confirm("お気に入りから削除してよろしいですか？")) return;
-        const ok = await Service.removeFavorite(btn.dataset.favRemove);
-        if (ok) { showMessage("success", "お気に入りから削除しました。"); await _refresh(); }
-        else    { showMessage("error",   "お気に入りの削除に失敗しました。"); }
+        btn.disabled = true;
+        const r = await Service.removeFavorite(btn.dataset.favRemove);
+        const ok =
+          r === true ||
+          (r && r.success === true) ||
+          (r && r.ok === true) ||
+          (r && r.result === "success");
+        if (ok) {
+          showMessage("success", (r && r.message) || "お気に入りから削除しました。");
+          await _refresh();
+        } else {
+          showMessage("error", (r && r.message) || "お気に入りの削除に失敗しました。");
+          btn.disabled = false;
+        }
       });
     });
   }
