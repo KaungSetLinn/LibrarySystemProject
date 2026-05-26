@@ -158,7 +158,10 @@
                     ${b.canReserve ? "" : "disabled"}>
               ${escapeHTML(b.actionLabel || "予約する")}
             </button>
-                  <button class="btn btn-secondary btn-sm" data-favorite-id="${escapeHTML(b.bookId)}">☆ お気に入り</button>
+            ${b.isFavorite
+              ? `<button class="btn btn-secondary btn-sm is-favorited" disabled aria-pressed="true">★ お気に入り済</button>`
+              : `<button class="btn btn-secondary btn-sm" data-fav-add="${escapeHTML(b.bookId)}">☆ お気に入り</button>`
+            }
           </td>
         </tr>`;
     });
@@ -170,29 +173,14 @@
     host.querySelectorAll("[data-reserve-id]").forEach(btn => {
       btn.addEventListener("click", () => _onReserve(btn.dataset.reserveId));
     });
-    host.querySelectorAll("[data-favorite-id]").forEach(btn => {
-      btn.addEventListener("click", () => _onAddFavorite(btn.dataset.favoriteId, btn));
+    // お気に入り追加ボタン（searchBooks 応答の isFavorite=false の書籍にのみ存在）。
+    // 既登録の書籍は HTML 側で disabled 済みのため、ここではハンドラを登録しない。
+    host.querySelectorAll("[data-fav-add]").forEach(btn => {
+      btn.addEventListener("click", () => _onAddFavorite(btn.dataset.favAdd, btn));
     });
-
-    // 既登録お気に入りを初期反映（v6.3 追加）
-    (async () => {
-      try {
-        const favList = await Service.listFavorites();
-        const favIds = new Set(
-          (Array.isArray(favList) ? favList : []).map(f => String(f.bookId))
-        );
-        host.querySelectorAll("[data-favorite-id]").forEach(btn => {
-          if (favIds.has(String(btn.dataset.favoriteId))) {
-            btn.textContent = "★ お気に入り済";
-            btn.classList.add("is-favorited");
-            btn.setAttribute("aria-pressed", "true");
-            btn.disabled = true;
-          }
-        });
-      } catch (e) {
-        if (window.Logger) Logger.warn("favorites init", e.message);
-      }
-    })();
+    // 旧：Service.listFavorites による初期反映処理は、バックエンド searchBooks が
+    //     isFavorite / favoriteId を返すようになった（v6.x 改修）ため削除。
+    //     これにより検索画面ごとに発生していた listFavorites の二重取得もなくなる。
   }
 
   /**
