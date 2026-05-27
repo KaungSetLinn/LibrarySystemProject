@@ -3,6 +3,7 @@ const sequelize = require('../db/connection');
 const Book = require('../models/Book');
 const Reservation = require('../models/Reservation');
 const Loan = require('../models/Loan');
+const Favorite = require('../models/Favorite');
 
 // =============================================================
 // 補助関数: actionState 判定（仕様書 6-4-8 の優先度テーブルに準拠）
@@ -145,7 +146,7 @@ exports.searchBooks = async (req, res) => {
         // =========================
         const bookIds = result.rows.map(b => b.bookId);
 
-        const [activeLoans, activeReservations] = await Promise.all([
+        const [activeLoans, activeReservations, favorites] = await Promise.all([
             Loan.findAll({
                 where: { bookId: { [Op.in]: bookIds }, returnDate: null },
                 attributes: ['bookId', 'dueDate'],
@@ -154,12 +155,28 @@ exports.searchBooks = async (req, res) => {
                 where: { bookId: { [Op.in]: bookIds }, status: { [Op.ne]: 'CANCELLED' } },
                 attributes: ['bookId', 'userId'],  // userId を追加取得
             }),
+            Favorite.findAll({
+                where: {
+                    userId: currentUserId,
+                    bookId: { [Op.in]: bookIds },
+                },
+
+                attributes: ['favoriteId', 'bookId'],
+            }),
         ]);
 
         // O(1) 参照のため Map に変換
         // reservationMap: bookId → userId（予約者ID）
         const loanMap        = new Map(activeLoans.map(l => [l.bookId, l]));
         const reservationMap = new Map(activeReservations.map(r => [Number(r.bookId), r.userId]));
+        const favoriteMap = new Map(
+            favorites.map(f => [
+                Number(f.bookId),
+                {
+                    favoriteId: Number(f.favoriteId),
+                }
+            ])
+        );
 
         // =========================
         // 6. 結果整形 + actionState 付与（仕様書 6-4-6）
@@ -185,6 +202,8 @@ exports.searchBooks = async (req, res) => {
             const { actionState, actionLabel, dueDate } =
                 _determineBookActionState(book, loanMap, reservationMap, currentUserId);
 
+            const favoriteInfo = favoriteMap.get(Number(book.bookId));
+
             return {
                 bookId: Number(book.bookId),   // 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
                 title: book.title,
@@ -196,6 +215,8 @@ exports.searchBooks = async (req, res) => {
                 actionLabel,
                 dueDate,
                 canReserve: CAN_RESERVE_MAP[actionState] ?? false,  // §24.2 補足2: △ 補助項目
+                isFavorite: !!favoriteInfo,                         // お気に入り情報
+                favoriteId: favoriteInfo?.favoriteId ?? null,       // // 未登録の場合、 null
             };
         });
 
