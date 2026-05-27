@@ -262,3 +262,14 @@
 .notif-badge[hidden] {
   display: none !important;
 }
+
+/* ===== お気に入りボタン グレーアウト（v6.3 追加） ===== */
+.btn[data-favorite-id].is-favorited,
+.btn[data-favorite-id][aria-pressed="true"],
+.btn[data-favorite-id]:disabled {
+  background-color: #e0e0e0 !important;
+  color: #888 !important;
+  border-color: #d0d0d0 !important;
+  cursor: not-allowed;
+  opacity: 0.85;
+}

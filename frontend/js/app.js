@@ -125,6 +125,20 @@ async function bootApp() {
     }
 
     // ----------------------------------------------------------------
+    // (★) 初期化完了後にヘッダ通知バッジを再計算する。
+    //     DOMContentLoaded 時点の初回バッジ更新は Adapter 切替前のため、
+    //     localStorage の lib-notifications（過去テストデータ）を参照して
+    //     誤った件数を表示する不具合があるため bootApp 完了時に再計算する。
+    //     （開発メンバー指摘 通知バッジ不具合 / v6.x 対応）
+    // ----------------------------------------------------------------
+    // ★ bootApp 完了フラグ：header-sync.js の防御線が参照する。
+    window.__BOOTAPP_READY = true;
+
+    if (typeof window.updateNotificationBadge === "function") {
+      window.updateNotificationBadge();
+    }
+
+    // ----------------------------------------------------------------
     // (6) 全画面共通：トップレベル例外ハンドラ（議事録 P4-04）
     // ----------------------------------------------------------------
     window.addEventListener("error", e => {

@@ -158,6 +158,10 @@
                     ${b.canReserve ? "" : "disabled"}>
               ${escapeHTML(b.actionLabel || "予約する")}
             </button>
+            ${b.isFavorite
+              ? `<button class="btn btn-secondary btn-sm is-favorited" disabled aria-pressed="true">★ お気に入り済</button>`
+              : `<button class="btn btn-secondary btn-sm" data-fav-add="${escapeHTML(b.bookId)}">☆ お気に入り</button>`
+            }
           </td>
         </tr>`;
     });
@@ -169,6 +173,14 @@
     host.querySelectorAll("[data-reserve-id]").forEach(btn => {
       btn.addEventListener("click", () => _onReserve(btn.dataset.reserveId));
     });
+    // お気に入り追加ボタン（searchBooks 応答の isFavorite=false の書籍にのみ存在）。
+    // 既登録の書籍は HTML 側で disabled 済みのため、ここではハンドラを登録しない。
+    host.querySelectorAll("[data-fav-add]").forEach(btn => {
+      btn.addEventListener("click", () => _onAddFavorite(btn.dataset.favAdd, btn));
+    });
+    // 旧：Service.listFavorites による初期反映処理は、バックエンド searchBooks が
+    //     isFavorite / favoriteId を返すようになった（v6.x 改修）ため削除。
+    //     これにより検索画面ごとに発生していた listFavorites の二重取得もなくなる。
   }
 
   /**
@@ -177,6 +189,30 @@
    * @param {string} bookId
    * @spec   RV03 / RF-07 / 議事録 P4-07
    */
+
+  async function _onAddFavorite(bookId, btn) {
+    if (!bookId || !btn) return;
+    btn.disabled = true;
+    const r = await Service.addFavorite(bookId);
+    const ok =
+      r === true ||
+      (r && r.success === true) ||
+      (r && r.ok === true) ||
+      (r && r.result === "success");
+    if (ok) {
+      const msg = (r && r.message) || "お気に入りに追加しました。";
+      showMessage("success", msg);
+      btn.textContent = "★ お気に入り済";
+      btn.classList.add("is-favorited");
+      btn.setAttribute("aria-pressed", "true");
+      btn.disabled = true;
+    } else {
+      const msg = (r && r.message) || "お気に入り追加に失敗しました。";
+      showMessage("error", msg);
+      btn.disabled = false;
+    }
+  }
+
   async function _onReserve(bookId) {
     if (!confirm(`書籍 ${bookId} を予約してよろしいですか？`)) return;
 
