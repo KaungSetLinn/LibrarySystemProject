@@ -60,6 +60,8 @@ exports.searchBooks = async (req, res) => {
             category,
             sort = 'bookId',
             page = 0,
+            reservableOnly,  // ← 追加
+            availableOnly,   // ← 追加
         } = req.query;
 
         // =========================
@@ -117,6 +119,53 @@ exports.searchBooks = async (req, res) => {
             conditions.push({ category: category.trim() });
         }
 
+        // =========================
+        // 2-a. reservableOnly フィルタ
+        //      AVAILABLE + ON_LOAN（順番待ち予約可）を対象とする
+        //      RESERVED / DISABLED は除外
+        // =========================
+        if (reservableOnly === 'true') {
+            const reservedBookIds = (await Reservation.findAll({
+                where: { status: { [Op.ne]: 'CANCELLED' } },
+                attributes: ['bookId'],
+                raw: true,
+            })).map(r => Number(r.bookId));
+
+            conditions.push({ isDisabled: false });
+            conditions.push({ canReserve: true });
+            if (reservedBookIds.length > 0) {
+                conditions.push({ bookId: { [Op.notIn]: reservedBookIds } });
+            }
+        }
+
+        // =========================
+        // 2-b. availableOnly フィルタ
+        //      AVAILABLE のみを対象とする
+        //      ON_LOAN / RESERVED / DISABLED はすべて除外
+        // =========================
+        if (availableOnly === 'true') {
+            const [loanedBookIds, reservedBookIds] = await Promise.all([
+                Loan.findAll({
+                    where: { returnDate: null },
+                    attributes: ['bookId'],
+                    raw: true,
+                }).then(rows => rows.map(r => Number(r.bookId))),
+                Reservation.findAll({
+                    where: { status: { [Op.ne]: 'CANCELLED' } },
+                    attributes: ['bookId'],
+                    raw: true,
+                }).then(rows => rows.map(r => Number(r.bookId))),
+            ]);
+
+            const excludedIds = [...new Set([...loanedBookIds, ...reservedBookIds])];
+
+            conditions.push({ isDisabled: false });
+            conditions.push({ canReserve: true });
+            if (excludedIds.length > 0) {
+                conditions.push({ bookId: { [Op.notIn]: excludedIds } });
+            }
+        }
+
         const whereCondition = conditions.length > 0 ? { [Op.and]: conditions } : {};
 
         // =========================
@@ -153,14 +202,13 @@ exports.searchBooks = async (req, res) => {
             }),
             Reservation.findAll({
                 where: { bookId: { [Op.in]: bookIds }, status: { [Op.ne]: 'CANCELLED' } },
-                attributes: ['bookId', 'userId'],  // userId を追加取得
+                attributes: ['bookId', 'userId'],
             }),
             Favorite.findAll({
                 where: {
                     userId: currentUserId,
                     bookId: { [Op.in]: bookIds },
                 },
-
                 attributes: ['favoriteId', 'bookId'],
             }),
         ]);
@@ -169,18 +217,15 @@ exports.searchBooks = async (req, res) => {
         // reservationMap: bookId → userId（予約者ID）
         const loanMap        = new Map(activeLoans.map(l => [l.bookId, l]));
         const reservationMap = new Map(activeReservations.map(r => [Number(r.bookId), r.userId]));
-        const favoriteMap = new Map(
+        const favoriteMap    = new Map(
             favorites.map(f => [
                 Number(f.bookId),
-                {
-                    favoriteId: Number(f.favoriteId),
-                }
+                { favoriteId: Number(f.favoriteId) },
             ])
         );
 
         // =========================
         // 6. 結果整形 + actionState 付与（仕様書 6-4-6）
-        //    availableOnly / reservableOnly はフロントエンド側で処理する
         // =========================
         const STATUS_LABEL_MAP = {
             AVAILABLE: '在庫あり',
@@ -205,7 +250,7 @@ exports.searchBooks = async (req, res) => {
             const favoriteInfo = favoriteMap.get(Number(book.bookId));
 
             return {
-                bookId: Number(book.bookId),   // 仕様書 §7.2.1 サンプル準拠 → 数値型で統一
+                bookId: Number(book.bookId),
                 title: book.title,
                 author: book.author,
                 category: book.category,
@@ -214,9 +259,9 @@ exports.searchBooks = async (req, res) => {
                 actionState,
                 actionLabel,
                 dueDate,
-                canReserve: CAN_RESERVE_MAP[actionState] ?? false,  // §24.2 補足2: △ 補助項目
-                isFavorite: !!favoriteInfo,                         // お気に入り情報
-                favoriteId: favoriteInfo?.favoriteId ?? null,       // // 未登録の場合、 null
+                canReserve: CAN_RESERVE_MAP[actionState] ?? false,
+                isFavorite: !!favoriteInfo,
+                favoriteId: favoriteInfo?.favoriteId ?? null,
             };
         });
 
