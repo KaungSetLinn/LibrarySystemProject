@@ -240,17 +240,16 @@ const ApiAdapter = (() => {
     if (!r || r.result === "error") return r || [];
 
     const data = _payload(r);
-    let books = (data.books || []).map(_normalizeBook);
-    if (c.availableOnly)  books = books.filter(b => b.actionState === "AVAILABLE");
-    if (c.reservableOnly) books = books.filter(b => b.canReserve === true);
+    // availableOnly / reservableOnly はサーバ側で適用済みとなったため、
+    // クライアント側での再フィルタおよび count / totalPages の上書きを廃止。
+    // Issue #12 対応：常にサーバ応答の count / totalPages を尊重する。
+    const books = (data.books || []).map(_normalizeBook);
 
-    const count = (c.availableOnly || c.reservableOnly)
-      ? books.length
-      : (Number.isFinite(Number(data.count)) ? Number(data.count) : books.length);
-    const pageSize = Number(data.pageSize || c.pageSize || books.length || 1);
-    const totalPages = (c.availableOnly || c.reservableOnly)
-      ? Math.max(1, Math.ceil(count / pageSize))
-      : (Number(data.totalPages) || Math.max(1, Math.ceil(count / pageSize)));
+    const count = Number.isFinite(Number(data.count)) ? Number(data.count) : books.length;
+    const pageSize = Number(data.pageSize || c.pageSize || 10);
+    const totalPages = Number.isFinite(Number(data.totalPages)) && Number(data.totalPages) > 0
+      ? Number(data.totalPages)
+      : Math.max(1, Math.ceil(count / pageSize));
 
     return {
       result: "success",
