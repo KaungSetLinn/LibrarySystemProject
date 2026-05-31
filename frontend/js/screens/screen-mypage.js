@@ -42,7 +42,7 @@
       <div class="container">
         <div class="page-title">
           <h1>マイページ</h1>
-          <span class="desc">予約・履歴・お気に入り・通知・データ管理を1つの画面に集約。</span>
+          <span class="desc">予約・履歴・お気に入り・通知を1つの画面に集約。</span>
         </div>
 
         <div data-message-host aria-live="polite"></div>
@@ -80,7 +80,10 @@
             <button data-tab="history"      class="tab"           role="tab" aria-selected="false">履歴</button>
             <button data-tab="favorites"    class="tab"           role="tab" aria-selected="false">お気に入り</button>
             <button data-tab="notifications" class="tab"          role="tab" aria-selected="false">通知</button>
+            <!-- 「データ管理」タブは管理者向け機能のため v6.4 で UI 非表示化（開発メンバー指摘）。
+                 実装本体（bridgeExport/Import/Reset）は将来の管理者画面用に残置する。
             <button data-tab="bridge"       class="tab"           role="tab" aria-selected="false">データ管理</button>
+            -->
           </div>
 
           <div data-tab-panel="reservations" class="tab-panel">
@@ -95,6 +98,10 @@
           <div data-tab-panel="notifications" class="tab-panel" hidden>
             <div data-mp-notif-host></div>
           </div>
+          <!-- 「データ管理」タブパネルは管理者向け機能のため v6.4 で UI 非表示化（開発メンバー指摘）。
+               実装本体（Service.bridgeExport / bridgeImport / bridgeReset）と
+               _setupBridge() / _onExport / _onImport / _onReset 関数は将来の管理者画面用に残置する。
+               _setupBridge() は querySelector を ?. で参照しているため、本 DOM 不在時も安全。
           <div data-tab-panel="bridge" class="tab-panel" hidden>
             <div class="bridge-grid">
               <div class="bridge-card">
@@ -115,6 +122,7 @@
               </div>
             </div>
           </div>
+          -->
         </section>
       </div>
     `;
