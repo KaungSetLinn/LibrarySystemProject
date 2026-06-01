@@ -437,7 +437,9 @@ async function _onCancelReservation(reservationId) {
     let html = `<ul class="notif-list">`;
     list.slice(0, 5).forEach(n => {
       const cls = n.isRead ? "notif-item is-read" : "notif-item is-unread";
-      html += `<li class="${cls}">
+      // ★ BUG-V2.1: data-notif-id 属性を付与し、未読のみキーボード操作対象とする
+      const tabAttr = n.isRead ? "" : ` tabindex="0" role="button"`;
+      html += `<li class="${cls}" data-notif-id="${escapeHTML(String(n.notificationId))}"${tabAttr}>
         <div class="notif-head">
           <strong>${escapeHTML(n.title || "")}</strong>
           <time class="muted">${escapeHTML(formatDateTime(n.createdAt))}</time>
@@ -448,6 +450,44 @@ async function _onCancelReservation(reservationId) {
     html += `</ul>
       <p class="text-right"><a href="#/notification">通知一覧へ →</a></p>`;
     host.innerHTML = html;
+
+    // ★ BUG-V2.1: マイページ通知タブでも未読通知クリックで既読化する
+    //   G05 と同様に Service.markNotificationRead を呼び、バッジを再計算する。
+    //   戻り値は boolean / ServiceResult 両対応の頑健判定 (Issue #8 の教訓)。
+    host.querySelectorAll("[data-notif-id]").forEach(li => {
+      if (li.classList.contains("is-read")) return;
+      const handler = async () => {
+        if (li.classList.contains("is-read")) return;
+        const notifId = li.dataset.notifId;
+        const res = await Service.markNotificationRead(notifId);
+        const ok = (res === true) || (res && res.success === true);
+        if (!ok) return;
+        // 即時 UI 反映
+        li.classList.remove("is-unread");
+        li.classList.add("is-read");
+        li.removeAttribute("tabindex");
+        li.removeAttribute("role");
+        li.setAttribute("aria-label",
+          "既読: " + (li.querySelector("strong")?.textContent || ""));
+        // サマリの未読件数を 1 件減算
+        const badge = document.querySelector("[data-mp-unread-count]");
+        if (badge) {
+          const cur = parseInt(badge.textContent, 10) || 0;
+          if (cur > 0) badge.textContent = String(cur - 1);
+        }
+        // ナビバー側バッジの再計算
+        if (typeof window.updateNotificationBadge === "function") {
+          window.updateNotificationBadge();
+        }
+      };
+      li.addEventListener("click", handler);
+      li.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handler();
+        }
+      });
+    });
   }
 
   /* ========== ブリッジ（JSON 出力 / 取込 / 初期化） ========== */
