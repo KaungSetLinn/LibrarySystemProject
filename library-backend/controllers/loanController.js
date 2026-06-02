@@ -146,6 +146,11 @@ exports.handleLoanEvent = async (req, res) => {
                 if (waitingReservation) {
                     waitingReservation.status = RESERVATION_STATUS.RESERVED;
                     waitingReservation.reservedAt = new Date().toISOString();
+
+                    const pickupDeadline = new Date();
+                    pickupDeadline.setDate(pickupDeadline.getDate() + 7);
+                    waitingReservation.pickupDeadline = pickupDeadline.toISOString().slice(0, 10);
+
                     await waitingReservation.save({ transaction: t });
                     affectedReservations = 1;
 
@@ -154,7 +159,7 @@ exports.handleLoanEvent = async (req, res) => {
                         userId: waitingReservation.userId,
                         type: 'RESERVATION_CONFIRMED',
                         title: '予約確定',
-                        message: '予約していた書籍が返却されました。受け取り準備が整いました。',
+                        message: `予約していた書籍が返却されました。受け取り期限は ${waitingReservation.pickupDeadline} です。`,
                         isRead: false,
                     }, { transaction: t });
                 }
