@@ -121,7 +121,7 @@
       host.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon" aria-hidden="true">📚</div>
-          <p>まだ予約がありません。</p>
+          <p>現在予約はありません。</p>
           <a href="#/advanced-search" class="btn btn-primary">書籍を検索する</a>
         </div>`;
       return;

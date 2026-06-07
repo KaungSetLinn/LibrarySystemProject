@@ -154,21 +154,38 @@
    * @spec    BUG-V2.0 / 議事録 P5-07
    */
   async function _onClick(notificationId, li) {
+    // ★ A-team No.6 修正:
+    //   従来は is-read 判定だけだったため、await 中の連打が重複 API 呼出となり
+    //   サーバ側で「既読済」エラーが返って「既読化に失敗しました」が表示されていた。
+    //   data-busy フラグで処理中の二重起動を抑止する。
     if (li.classList.contains("is-read")) return;
-    const ok = await Service.markNotificationRead(notificationId);
-    if (!ok) {
-      showMessage("error", "既読化に失敗しました。再度お試しください。");
-      return;
-    }
-    // 即時 UI 反映
-    li.classList.remove("is-unread");
-    li.classList.add("is-read");
-    li.setAttribute("aria-label",
-      "既読: " + (li.querySelector("strong")?.textContent || ""));
-    // 未読件数の再計算
-    await _refresh();
-    if (typeof window.updateNotificationBadge === "function") {
-      window.updateNotificationBadge();
+    if (li.dataset.busy === "1") return;
+    li.dataset.busy = "1";
+    try {
+      const ok = await Service.markNotificationRead(notificationId);
+      if (!ok) {
+        showMessage("error", "既読化に失敗しました。再度お試しください。");
+        return;
+      }
+      // ★ A-team No.7 修正:
+      //   直前のエラーメッセージが残っている場合のため、明示的にクリアする。
+      if (typeof clearMessage === "function") {
+        clearMessage();
+      } else if (typeof showMessage === "function") {
+        showMessage("info", "");
+      }
+      // 即時 UI 反映
+      li.classList.remove("is-unread");
+      li.classList.add("is-read");
+      li.setAttribute("aria-label",
+        "既読: " + (li.querySelector("strong")?.textContent || ""));
+      // 未読件数の再計算
+      await _refresh();
+      if (typeof window.updateNotificationBadge === "function") {
+        window.updateNotificationBadge();
+      }
+    } finally {
+      li.dataset.busy = "";
     }
   }
   Router.register("notification", {

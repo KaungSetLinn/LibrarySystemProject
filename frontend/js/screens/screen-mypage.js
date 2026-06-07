@@ -274,26 +274,26 @@ async function _findBook(bookId) {
 }
 
 async function _onCancelReservation(reservationId) {
+  // ★ A-team No.1 修正:
+  //   旧実装は _renderSummary(data) と全データを渡しており、
+  //   data.reservationCount などが undefined になりサマリ全項目が "undefined" 表示に
+  //   なっていた。_refresh は正しい summary オブジェクト生成ロジックを内包しているため
+  //   そちらに統一する (重複コードも解消)。
+  //   Service.cancelReservation の戻り値は boolean / ServiceResult 両対応の頑健判定 (Issue #8 教訓)。
   if (!confirm(`予約 ${reservationId} をキャンセルしてよろしいですか？`)) return;
 
   const r = await Service.cancelReservation(reservationId);
-  if (r.success) {
-    showMessage("success", r.message);
-
-    const userId = Service.getSession().userId;
-    const data   = await Service.getMyPageData(userId);
-
-    await _renderReservations(data.currentReservations);
-
-    if (typeof _renderSummary === "function") {
-      _renderSummary(data);
-    }
-
+  const ok = (r === true) || (r && r.success === true);
+  if (ok) {
+    const msg = (r && r.message) || "予約をキャンセルしました。";
+    showMessage("success", msg);
+    await _refresh();
     if (typeof window.updateNotificationBadge === "function") {
       window.updateNotificationBadge();
     }
   } else {
-    showMessage("error", r.message);
+    const errMsg = (r && r.message) || "予約のキャンセルに失敗しました。";
+    showMessage("error", errMsg);
   }
 }
 async function _findBook(bookId) {
@@ -306,31 +306,6 @@ async function _findBook(bookId) {
   }
   return null;
 }
-
-async function _onCancelReservation(reservationId) {
-  if (!confirm(`予約 ${reservationId} をキャンセルしてよろしいですか？`)) return;
-
-  const r = await Service.cancelReservation(reservationId);
-  if (r.success) {
-    showMessage("success", r.message);
-
-    const userId = Service.getSession().userId;
-    const data   = await Service.getMyPageData(userId);
-
-    await _renderReservations(data.currentReservations);
-
-    if (typeof _renderSummary === "function") {
-      _renderSummary(data);
-    }
-
-    if (typeof window.updateNotificationBadge === "function") {
-      window.updateNotificationBadge();
-    }
-  } else {
-    showMessage("error", r.message);
-  }
-}
-
 
   /* ========== 履歴 ========== */
 
@@ -470,7 +445,10 @@ async function _onCancelReservation(reservationId) {
         li.setAttribute("aria-label",
           "既読: " + (li.querySelector("strong")?.textContent || ""));
         // サマリの未読件数を 1 件減算
-        const badge = document.querySelector("[data-mp-unread-count]");
+        // ★ A-team No.9 修正:
+        //   PR #14 で書いた "[data-mp-unread-count]" は実装と不一致だった。
+        //   _renderSummary が _set("[data-mp-unread]", ...) で書き込むセレクタに合わせる。
+        const badge = document.querySelector("[data-mp-unread]");
         if (badge) {
           const cur = parseInt(badge.textContent, 10) || 0;
           if (cur > 0) badge.textContent = String(cur - 1);

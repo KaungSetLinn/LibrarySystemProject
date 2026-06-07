@@ -108,6 +108,16 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(frontendPath, 'reservation-status.html'));
 });
 
+// ★ A-team No.10 修正: SPA フォールバック
+//   /mypage のような未知のパスでも frontend エントリ HTML を返し、
+//   フロント JS の Router (#/...) に処理を委ねる。
+//   "Cannot GET /xxx" が出るのを防止。
+//   API ルート (上の app.use('/api/v1/...')) は既に登録済なので影響なし。
+//   Express 5.x / 最新 path-to-regexp 互換のため app.use() 形式で実装。
+app.use((req, res) => {
+    res.sendFile(path.join(frontendPath, 'reservation-status.html'));
+});
+
 // ✅ Initialize DB before starting server
 sequelize.authenticate()
     .then(() => {
