@@ -10,9 +10,9 @@
 module.exports = {
   async up(queryInterface) {
     await queryInterface.bulkInsert('users', [
-      { userId: 21, userName: '仮名ユーザー21' },
-      { userId: 22, userName: '仮名ユーザー22'   },
-      { userId: 23, userName: '仮名ユーザー23' },
+      { userId: 21, userName: 'TestUser21' },
+      { userId: 22, userName: 'TestUser22'   },
+      { userId: 23, userName: 'TestUser23' },
     ], { ignoreDuplicates: true });
   },
   async down(queryInterface) {
